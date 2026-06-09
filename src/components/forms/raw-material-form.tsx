@@ -1,14 +1,16 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { rawMaterialSchema, RawMaterialFormData } from '@/types/schemas';
 import { useRawMaterialStore } from '@/stores';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
 import { FormField } from './form-field';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -16,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { RawMaterialType } from '@/types';
 
 interface RawMaterialFormProps {
   initialData?: RawMaterialFormData;
@@ -26,14 +27,13 @@ interface RawMaterialFormProps {
 
 export function RawMaterialForm({ initialData, entityId, mode = 'create' }: RawMaterialFormProps) {
   const router = useRouter();
-  const { create, update, isNameUnique } = useRawMaterialStore();
+  const { create, update, isNameUnique, loadCatalogs, tipos, tiposUnidad } = useRawMaterialStore();
   const { toast } = useToast();
 
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
+    control,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<RawMaterialFormData>({
@@ -41,63 +41,79 @@ export function RawMaterialForm({ initialData, entityId, mode = 'create' }: RawM
     defaultValues: initialData,
   });
 
-  const typeValue = watch('type');
+  useEffect(() => {
+    if (tipos.length === 0 || tiposUnidad.length === 0) {
+      loadCatalogs();
+    }
+  }, [tipos.length, tiposUnidad.length, loadCatalogs]);
 
   const onSubmit = async (data: RawMaterialFormData) => {
-    if (!data.type) {
-      setError('type', { message: 'El tipo es requerido' });
-      return;
-    }
-
-    const nameExists = isNameUnique(data.name, entityId);
+    const nameExists = isNameUnique(data.nombre, entityId);
     if (!nameExists) {
-      setError('name', { message: 'Este nombre ya está en uso' });
+      setError('nombre', { message: 'Este nombre ya está en uso' });
       return;
     }
 
     try {
       if (mode === 'create') {
-        create(data.name, data.type as RawMaterialType);
+        await create(data);
         toast({ title: 'Materia prima creada', description: 'La materia prima se ha creado correctamente', variant: 'success' });
       } else {
         if (!entityId) return;
-        update(entityId, data.name, data.type as RawMaterialType);
+        await update(entityId, data);
         toast({ title: 'Materia prima actualizada', description: 'La materia prima se ha actualizado correctamente', variant: 'success' });
       }
       router.push('/raw-materials');
-    } catch {
-      toast({ title: 'Error', description: 'Ha ocurrido un error inesperado', variant: 'error' });
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <FormField label="Nombre" error={errors.name?.message}>
-        <input
-          {...register('name')}
-          type="text"
-          className="flex h-9 w-full rounded-8 border border-border-tabla bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gris-tecnico focus:border-2 focus:border-violet-lab focus:outline-none"
-          placeholder="Nombre de la materia prima"
-        />
+      <FormField label="Nombre" error={errors.nombre?.message}>
+        <Input {...register('nombre')} placeholder="Nombre de la materia prima" />
       </FormField>
 
-      <FormField label="Tipo" error={errors.type?.message}>
-        <Select value={typeValue} onValueChange={(value) => setValue('type', value as RawMaterialType)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecciona el tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="chemical">
-              <Badge variant="chemical" className="mr-2">●</Badge>
-              Químico
-            </SelectItem>
-            <SelectItem value="packaging">
-              <Badge variant="packaging" className="mr-2">●</Badge>
-              Empaquetado
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </FormField>
+      <Controller
+        name="id_cat_amonet_tipo_materia_prima"
+        control={control}
+        render={({ field }) => (
+          <FormField label="Tipo de materia prima" error={errors.id_cat_amonet_tipo_materia_prima?.message}>
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona el tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {tipos.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+        )}
+      />
+
+      <Controller
+        name="id_cat_amonet_tipo_unidad"
+        control={control}
+        render={({ field }) => (
+          <FormField label="Unidad" error={errors.id_cat_amonet_tipo_unidad?.message}>
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona la unidad" />
+              </SelectTrigger>
+              <SelectContent>
+                {tiposUnidad.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.nombre} ({u.abreviacion})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+        )}
+      />
 
       <div className="flex justify-end gap-3 pt-4">
         <Button type="button" variant="secondary" onClick={() => router.push('/raw-materials')}>

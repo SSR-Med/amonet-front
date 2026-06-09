@@ -1,4 +1,5 @@
-'use client'
+'use client';
+
 import { PageHeader } from '@/components/layout';
 import { ProductForm } from '@/components/forms';
 

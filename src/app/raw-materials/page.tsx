@@ -1,71 +1,84 @@
-'use client'
-import { useState, useCallback } from 'react';
-import { useRawMaterialStore, useProductStore } from '@/stores';
+'use client';
+
+import { useState, useCallback, useEffect } from 'react';
+import { useRawMaterialStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
 import { ConfirmDeleteModal } from '@/components/modals';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
 import type { RawMaterial } from '@/types';
 
 export default function RawMaterialsPage() {
-  const { getAll, delete: deleteRawMaterial, isNameUnique } = useRawMaterialStore();
-  const { products } = useProductStore();
+  const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteRawMaterial } = useRawMaterialStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<RawMaterial | null>(null);
-  const rawMaterials = getAll();
+
+  const fetch = useCallback(
+    (page = 1) => getAll(page, pageSize),
+    [getAll, pageSize],
+  );
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
   const handleDelete = useCallback((rawMaterial: RawMaterial) => {
     setItemToDelete(rawMaterial);
     setDeleteModalOpen(true);
   }, []);
 
-  const confirmDelete = useCallback(() => {
+  const confirmDelete = useCallback(async () => {
     if (!itemToDelete) return;
-    const usedInProducts = products.some((p) =>
-      p.rawMaterials.some((rm) => rm.rawMaterialId === itemToDelete.id)
-    );
-    if (usedInProducts) {
+    try {
+      await deleteRawMaterial(itemToDelete.id);
       toast({
-        title: 'No se puede eliminar',
-        description: 'Esta materia prima está asignada a productos existentes',
-        variant: 'warning',
+        title: 'Materia prima eliminada',
+        description: 'La materia prima se ha eliminado correctamente',
+        variant: 'success',
       });
       setDeleteModalOpen(false);
-      return;
+      setItemToDelete(null);
+      fetch(currentPage);
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err, 'Error al eliminar'), variant: 'error' });
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
     }
-    deleteRawMaterial(itemToDelete.id);
-    toast({
-      title: 'Materia prima eliminada',
-      description: 'La materia prima se ha eliminado correctamente',
-      variant: 'success',
-    });
-    setDeleteModalOpen(false);
-    setItemToDelete(null);
-  }, [itemToDelete, deleteRawMaterial, products, toast]);
+  }, [itemToDelete, deleteRawMaterial, toast, fetch, currentPage]);
 
   const columns = [
     {
-      key: 'name',
+      key: 'nombre',
       header: 'Nombre',
       render: (rm: RawMaterial) => (
-        <span className="font-medium text-gray-900">{rm.name}</span>
+        <span className="font-medium text-gray-900">{rm.nombre}</span>
       ),
     },
     {
-      key: 'type',
+      key: 'tipo',
       header: 'Tipo',
       render: (rm: RawMaterial) => (
-        <Badge variant={rm.type === 'chemical' ? 'chemical' : 'packaging'}>
-          {rm.type === 'chemical' ? '● Químico' : '● Empaquetado'}
+        <Badge variant={
+          rm.tipo_materia_prima.nombre === 'QUIMICO' ? 'chemical' : 'packaging'
+        }>
+          ● {rm.tipo_materia_prima.nombre}
         </Badge>
+      ),
+    },
+    {
+      key: 'unidad',
+      header: 'Unidad',
+      render: (rm: RawMaterial) => (
+        <span className="text-sm text-gris-tecnico">{rm.tipo_unidad.abreviacion}</span>
       ),
     },
   ];
 
-  if (rawMaterials.length === 0) {
+  if (!loading && items.length === 0) {
     return (
       <>
         <PageHeader title="Materias Primas" description="Gestiona las materias primas de tus productos" />
@@ -90,10 +103,16 @@ export default function RawMaterialsPage() {
       />
       <div className="px-6">
         <EntityTable
-          data={rawMaterials}
+          data={items}
           columns={columns}
           editHref={(rm) => `/raw-materials/${rm.id}/edit`}
           onDelete={handleDelete}
+          pagination={{
+            currentPage,
+            totalItems,
+            pageSize,
+            onPageChange: fetch,
+          }}
         />
       </div>
       <ConfirmDeleteModal
@@ -101,7 +120,7 @@ export default function RawMaterialsPage() {
         onOpenChange={setDeleteModalOpen}
         title="¿Eliminar materia prima?"
         description={itemToDelete ? 'Esta materia prima está asignada a productos existentes' : undefined}
-        itemName={itemToDelete?.name || ''}
+        itemName={itemToDelete?.nombre || ''}
         onConfirm={confirmDelete}
       />
     </>

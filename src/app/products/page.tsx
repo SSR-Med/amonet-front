@@ -1,43 +1,87 @@
-'use client'
-import { useState, useCallback } from 'react';
-import Link from 'next/link';
-import { useProductStore, useBrandStore } from '@/stores';
+'use client';
+
+import { useState, useCallback, useEffect } from 'react';
+import { useProductStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
+import { EntityTable } from '@/components/tables';
 import { ConfirmDeleteModal } from '@/components/modals';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Pencil, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
 import type { Product } from '@/types';
 
 export default function ProductsPage() {
-  const { getAll, delete: deleteProduct } = useProductStore();
-  const { getAll: getAllBrands, getById: getBrandById } = useBrandStore();
+  const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteProduct } = useProductStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Product | null>(null);
-  const products = getAll();
-  const brands = getAllBrands();
+
+  const fetch = useCallback(
+    (page = 1) => getAll(page, pageSize),
+    [getAll, pageSize],
+  );
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
   const handleDelete = useCallback((product: Product) => {
     setItemToDelete(product);
     setDeleteModalOpen(true);
   }, []);
 
-  const confirmDelete = useCallback(() => {
+  const confirmDelete = useCallback(async () => {
     if (!itemToDelete) return;
-    deleteProduct(itemToDelete.id);
-    toast({
-      title: 'Producto eliminado',
-      description: 'El producto se ha eliminado correctamente',
-      variant: 'success',
-    });
-    setDeleteModalOpen(false);
-    setItemToDelete(null);
-  }, [itemToDelete, deleteProduct, toast]);
+    try {
+      await deleteProduct(itemToDelete.id);
+      toast({
+        title: 'Producto eliminado',
+        description: 'El producto se ha eliminado correctamente',
+        variant: 'success',
+      });
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+      fetch(currentPage);
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err, 'Error al eliminar'), variant: 'error' });
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+    }
+  }, [itemToDelete, deleteProduct, toast, fetch, currentPage]);
 
-  if (products.length === 0) {
+  const columns = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      render: (product: Product) => (
+        <span className="font-medium text-gray-900">{product.nombre}</span>
+      ),
+    },
+    {
+      key: 'codigo',
+      header: 'Código',
+      render: (product: Product) => (
+        <span className="text-sm text-gris-tecnico">{product.codigo}</span>
+      ),
+    },
+    {
+      key: 'marca',
+      header: 'Marca',
+      render: (product: Product) => (
+        <Badge variant="default">{product.marca.nombre}</Badge>
+      ),
+    },
+    {
+      key: 'materias_primas',
+      header: 'Materias Primas',
+      render: (product: Product) => (
+        <Badge variant="default">{product.materias_primas.length}</Badge>
+      ),
+    },
+  ];
+
+  if (!loading && items.length === 0) {
     return (
       <>
         <PageHeader title="Productos" description="Gestiona tus productos terminados" />
@@ -61,63 +105,24 @@ export default function ProductsPage() {
         createLabel="Crear producto"
       />
       <div className="px-6">
-        <div className="border border-border-tabla rounded-8 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-lavanda-soft">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gris-tecnico">Nombre</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gris-tecnico">Código</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gris-tecnico">Marca</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gris-tecnico">Materias Primas</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gris-tecnico w-24">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-tabla">
-              {products.map((product) => {
-                const brand = getBrandById(product.brandId);
-                return (
-                  <tr key={product.id} className="hover:bg-lila-50 transition-colors">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{product.name}</td>
-                    <td className="px-4 py-3 text-sm text-gris-tecnico">{product.code}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {brand ? (
-                        <Badge variant="default">{brand.name}</Badge>
-                      ) : (
-                        <span className="text-gris-tecnico">Sin marca</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="default">{product.rawMaterials.length}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                          <Link href={`/products/${product.id}/edit`}>
-                            <Pencil className="h-4 w-4 text-violet-lab" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleDelete(product)}
-                        >
-                          <Trash2 className="h-4 w-4 text-coral-alerta" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <EntityTable
+          data={items}
+          columns={columns}
+          editHref={(product) => `/products/${product.id}/edit`}
+          onDelete={handleDelete}
+          pagination={{
+            currentPage,
+            totalItems,
+            pageSize,
+            onPageChange: fetch,
+          }}
+        />
       </div>
       <ConfirmDeleteModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
         title="¿Eliminar producto?"
-        itemName={itemToDelete?.name || ''}
+        itemName={itemToDelete?.nombre || ''}
         onConfirm={confirmDelete}
       />
     </>

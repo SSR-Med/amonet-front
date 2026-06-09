@@ -1,62 +1,65 @@
-'use client'
-import { useState, useCallback } from 'react';
+'use client';
+
+import { useState, useCallback, useEffect } from 'react';
 import { useBrandStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
 import { ConfirmDeleteModal } from '@/components/modals';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
 import type { Brand } from '@/types';
 
 export default function BrandsPage() {
-  const { getAll, delete: deleteBrand, isNameUnique } = useBrandStore();
+  const { items: brands, totalItems, currentPage, pageSize, loading, getAll, delete: deleteBrand } = useBrandStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Brand | null>(null);
-  const brands = getAll();
 
-  const handleEdit = useCallback((brand: Brand) => {
-    window.location.href = `/brands/${brand.id}/edit`;
-  }, []);
+  const fetchBrands = useCallback(
+    (page = 1) => getAll(page, pageSize),
+    [getAll, pageSize],
+  );
+
+  useEffect(() => {
+    fetchBrands();
+  }, [fetchBrands]);
 
   const handleDelete = useCallback((brand: Brand) => {
     setItemToDelete(brand);
     setDeleteModalOpen(true);
   }, []);
 
-  const confirmDelete = useCallback(() => {
+  const confirmDelete = useCallback(async () => {
     if (!itemToDelete) return;
-    const isInUse = false;
-    if (isInUse) {
+    try {
+      await deleteBrand(itemToDelete.id);
       toast({
-        title: 'No se puede eliminar',
-        description: 'Esta marca está asignada a productos existentes',
-        variant: 'warning',
+        title: 'Marca eliminada',
+        description: 'La marca se ha eliminado correctamente',
+        variant: 'success',
       });
       setDeleteModalOpen(false);
-      return;
+      setItemToDelete(null);
+      fetchBrands(currentPage);
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err, 'Error al eliminar'), variant: 'error' });
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
     }
-    deleteBrand(itemToDelete.id);
-    toast({
-      title: 'Marca eliminada',
-      description: 'La marca se ha eliminado correctamente',
-      variant: 'success',
-    });
-    setDeleteModalOpen(false);
-    setItemToDelete(null);
-  }, [itemToDelete, deleteBrand, toast]);
+  }, [itemToDelete, deleteBrand, toast, fetchBrands, currentPage]);
 
   const columns = [
     {
-      key: 'name',
+      key: 'nombre',
       header: 'Nombre',
       render: (brand: Brand) => (
-        <span className="font-medium text-gray-900">{brand.name}</span>
+        <span className="font-medium text-gray-900">{brand.nombre}</span>
       ),
     },
   ];
 
-  if (brands.length === 0) {
+  if (!loading && brands.length === 0) {
     return (
       <>
         <PageHeader title="Marcas" description="Gestiona las marcas de tus productos" />
@@ -85,6 +88,12 @@ export default function BrandsPage() {
           columns={columns}
           editHref={(brand) => `/brands/${brand.id}/edit`}
           onDelete={handleDelete}
+          pagination={{
+            currentPage,
+            totalItems,
+            pageSize,
+            onPageChange: fetchBrands,
+          }}
         />
       </div>
       <ConfirmDeleteModal
@@ -92,7 +101,7 @@ export default function BrandsPage() {
         onOpenChange={setDeleteModalOpen}
         title="¿Eliminar marca?"
         description={itemToDelete ? 'Esta marca está asignada a productos existentes' : undefined}
-        itemName={itemToDelete?.name || ''}
+        itemName={itemToDelete?.nombre || ''}
         onConfirm={confirmDelete}
       />
     </>

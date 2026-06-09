@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { Package, FlaskConical, Variable, CircleDot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

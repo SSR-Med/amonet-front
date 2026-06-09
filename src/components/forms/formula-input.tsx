@@ -24,14 +24,17 @@ export function FormulaInput({
   disabled,
   className,
 }: FormulaInputProps) {
-  const { getAll } = useProductVariableStore();
-  const variables = getAll();
+  const { items, getAll } = useProductVariableStore();
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredVariables, setFilteredVariables] = useState<ProductVariable[]>([]);
   const [cursorPosition, setCursorPosition] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const validation = value.trim() ? validateFormula(value, variables.map((v) => v.name)) : { valid: true };
+  useEffect(() => {
+    if (items.length === 0) getAll();
+  }, [items.length, getAll]);
+
+  const validation = value.trim() ? validateFormula(value, items.map((v) => v.nombre)) : { valid: true };
   const showError = error || (!validation.valid && value.trim() !== '');
 
   useEffect(() => {
@@ -39,8 +42,8 @@ export function FormulaInput({
       const word = value.slice(0, cursorPosition).split(/[\s+\-*/^()]/).pop() || '';
       if (word && /^[a-zA-Z_]/.test(word)) {
         setFilteredVariables(
-          variables.filter((v) =>
-            v.name.toLowerCase().startsWith(word.toLowerCase())
+          items.filter((v) =>
+            v.nombre.toLowerCase().startsWith(word.toLowerCase())
           )
         );
       } else {
@@ -49,7 +52,7 @@ export function FormulaInput({
     } else {
       setFilteredVariables([]);
     }
-  }, [value, cursorPosition, variables, showSuggestions]);
+  }, [value, cursorPosition, items, showSuggestions]);
 
   const insertVariable = (varName: string) => {
     const word = value.slice(0, cursorPosition).split(/[\s+\-*/^()]/).pop() || '';
@@ -112,11 +115,11 @@ export function FormulaInput({
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  insertVariable(v.name);
+                  insertVariable(v.nombre);
                 }}
                 className="w-full px-3 py-2 text-left text-sm hover:bg-lila-50"
               >
-                <code className="text-violet-lab">{v.name}</code>
+                <code className="text-violet-lab">{v.nombre}</code>
               </button>
             </li>
           ))}
@@ -128,7 +131,7 @@ export function FormulaInput({
       )}
 
       <p className="mt-1 text-xs text-gris-tecnico">
-        Variables disponibles: {variables.length === 0 ? 'Ninguna' : variables.map((v) => v.name).join(', ')}
+        Variables disponibles: {items.length === 0 ? 'Ninguna' : items.map((v) => v.nombre).join(', ')}
       </p>
     </div>
   );

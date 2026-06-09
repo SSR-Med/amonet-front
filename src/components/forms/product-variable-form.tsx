@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation';
 import { productVariableSchema, ProductVariableFormData } from '@/types/schemas';
 import { useProductVariableStore } from '@/stores';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
 import { FormField } from './form-field';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 interface ProductVariableFormProps {
@@ -31,36 +33,31 @@ export function ProductVariableForm({ initialData, entityId, mode = 'create' }: 
   });
 
   const onSubmit = async (data: ProductVariableFormData) => {
-    const nameExists = isNameUnique(data.name, entityId);
+    const nameExists = isNameUnique(data.nombre, entityId);
     if (!nameExists) {
-      setError('name', { message: 'Este nombre ya está en uso' });
+      setError('nombre', { message: 'Este nombre ya está en uso' });
       return;
     }
 
     try {
       if (mode === 'create') {
-        create(data.name);
+        await create(data.nombre);
         toast({ title: 'Variable creada', description: 'La variable se ha creado correctamente', variant: 'success' });
       } else {
         if (!entityId) return;
-        update(entityId, data.name);
+        await update(entityId, data.nombre);
         toast({ title: 'Variable actualizada', description: 'La variable se ha actualizado correctamente', variant: 'success' });
       }
       router.push('/product-variables');
-    } catch {
-      toast({ title: 'Error', description: 'Ha ocurrido un error inesperado', variant: 'error' });
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <FormField label="Nombre" error={errors.name?.message}>
-        <input
-          {...register('name')}
-          type="text"
-          className="flex h-9 w-full rounded-8 border border-border-tabla bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gris-tecnico focus:border-2 focus:border-violet-lab focus:outline-none"
-          placeholder="peso_neto"
-        />
+      <FormField label="Nombre" error={errors.nombre?.message}>
+        <Input {...register('nombre')} placeholder="peso_neto" />
       </FormField>
       <p className="text-xs text-gris-tecnico">
         Usa este nombre como referencia en las fórmulas. Solo letras, números y guiones bajos.

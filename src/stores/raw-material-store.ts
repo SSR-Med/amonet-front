@@ -1,64 +1,84 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { RawMaterial, RawMaterialType } from '@/types';
+import type { RawMaterial, CatalogoInfo } from '@/types';
+import * as api from '@/lib/api/raw-materials';
+import * as catalogsApi from '@/lib/api/catalogs';
 
 interface RawMaterialStore {
-  rawMaterials: RawMaterial[];
-  getAll: () => RawMaterial[];
+  items: RawMaterial[];
+  totalItems: number;
+  currentPage: number;
+  pageSize: number;
+  loading: boolean;
+  tipos: CatalogoInfo[];
+  tiposUnidad: CatalogoInfo[];
+
+  getAll: (page?: number, pageSize?: number, nombre?: string) => Promise<void>;
+  loadCatalogs: () => Promise<void>;
   getById: (id: string) => RawMaterial | undefined;
-  create: (name: string, type: RawMaterialType) => RawMaterial;
-  update: (id: string, name: string, type: RawMaterialType) => void;
-  delete: (id: string) => boolean;
-  isNameUnique: (name: string, excludeId?: string) => boolean;
-  isUsedInProducts: (id: string) => boolean;
+  create: (data: { nombre: string; id_cat_amonet_tipo_materia_prima: string; id_cat_amonet_tipo_unidad: string }) => Promise<RawMaterial>;
+  update: (id: string, data: { nombre: string; id_cat_amonet_tipo_materia_prima: string; id_cat_amonet_tipo_unidad: string }) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+  isNameUnique: (nombre: string, excludeId?: string) => boolean;
 }
 
-export const useRawMaterialStore = create<RawMaterialStore>()(
-  persist(
-    (set, get) => ({
-      rawMaterials: [],
+export const useRawMaterialStore = create<RawMaterialStore>()((set, get) => ({
+  items: [],
+  totalItems: 0,
+  currentPage: 1,
+  pageSize: 20,
+  loading: false,
+  tipos: [],
+  tiposUnidad: [],
 
-      getAll: () => get().rawMaterials,
+  getAll: async (page = 1, pageSize = 20, nombre?: string) => {
+    set({ loading: true });
+    try {
+      const res = await api.getAllRawMaterials(page, pageSize, nombre);
+      set({
+        items: res.items,
+        totalItems: res.total_items,
+        currentPage: res.current_page,
+        pageSize: res.page_size,
+      });
+    } finally {
+      set({ loading: false });
+    }
+  },
 
-      getById: (id: string) => get().rawMaterials.find((rm) => rm.id === id),
+  loadCatalogs: async () => {
+    const [tipos, tiposUnidad] = await Promise.all([
+      catalogsApi.getTiposMateriaPrima(),
+      catalogsApi.getTiposUnidad(),
+    ]);
+    set({ tipos, tiposUnidad });
+  },
 
-      create: (name: string, type: RawMaterialType) => {
-        const newRawMaterial: RawMaterial = {
-          id: crypto.randomUUID(),
-          name: name.trim(),
-          type,
-        };
-        set((state) => ({ rawMaterials: [...state.rawMaterials, newRawMaterial] }));
-        return newRawMaterial;
-      },
+  getById: (id: string) => get().items.find((rm) => rm.id === id),
 
-      update: (id: string, name: string, type: RawMaterialType) => {
-        set((state) => ({
-          rawMaterials: state.rawMaterials.map((rm) =>
-            rm.id === id ? { ...rm, name: name.trim(), type } : rm
-          ),
-        }));
-      },
+  create: async (data) => {
+    const item = await api.createRawMaterial(data);
+    set((state) => ({ items: [...state.items, item] }));
+    return item;
+  },
 
-      delete: (id: string) => {
-        if (get().isUsedInProducts(id)) return false;
-        set((state) => ({
-          rawMaterials: state.rawMaterials.filter((rm) => rm.id !== id),
-        }));
-        return true;
-      },
+  update: async (id, data) => {
+    const updated = await api.updateRawMaterial(id, data);
+    set((state) => ({
+      items: state.items.map((rm) => (rm.id === id ? updated : rm)),
+    }));
+  },
 
-      isNameUnique: (name: string, excludeId?: string) => {
-        const normalized = name.trim().toLowerCase();
-        return !get().rawMaterials.some(
-          (rm) => rm.name.toLowerCase() === normalized && rm.id !== excludeId
-        );
-      },
+  delete: async (id: string) => {
+    await api.deleteRawMaterial(id);
+    set((state) => ({
+      items: state.items.filter((rm) => rm.id !== id),
+    }));
+  },
 
-      isUsedInProducts: (id: string) => {
-        return false;
-      },
-    }),
-    { name: 'cosmeticos-raw-materials' }
-  )
-);
+  isNameUnique: (nombre: string, excludeId?: string) => {
+    const normalized = nombre.trim().toLowerCase();
+    return !get().items.some(
+      (rm) => rm.nombre.toLowerCase() === normalized && rm.id !== excludeId
+    );
+  },
+}));

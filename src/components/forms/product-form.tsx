@@ -1,15 +1,16 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { productSchema, ProductFormData } from '@/types/schemas';
 import { useProductStore, useBrandStore, useRawMaterialStore } from '@/stores';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
 import { FormField } from './form-field';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -19,7 +20,6 @@ import {
 } from '@/components/ui/select';
 import { FormulaInput } from './formula-input';
 import { Plus, Trash2 } from 'lucide-react';
-import type { ProductRawMaterial } from '@/types';
 
 interface ProductFormProps {
   initialData?: ProductFormData;
@@ -31,11 +31,15 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
   const router = useRouter();
   const { create, update } = useProductStore();
   const { getAll: getAllBrands } = useBrandStore();
-  const { getAll: getAllMaterials } = useRawMaterialStore();
+  const { getAll: getAllMaterials, items: allMaterials } = useRawMaterialStore();
   const { toast } = useToast();
 
-  const brands = getAllBrands();
-  const allMaterials = getAllMaterials();
+  useEffect(() => {
+    getAllBrands();
+    getAllMaterials();
+  }, [getAllBrands, getAllMaterials]);
+
+  const brands = useBrandStore((s) => s.items);
 
   const {
     register,
@@ -47,14 +51,14 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData || {
-      name: '',
-      code: '',
-      brandId: '',
-      rawMaterials: [{ rawMaterialId: '', formula: '' }],
+      codigo: '',
+      nombre: '',
+      id_amonet_marca: '',
+      materias_primas: [{ id_amonet_materia_prima: '', formula: '' }],
     },
   });
 
-  const watchedRawMaterials = watch('rawMaterials');
+  const watchedRawMaterials = watch('materias_primas');
 
   const availableMaterials = useCallback(
     (excludeIds: string[]) => {
@@ -65,22 +69,22 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
   );
 
   const addRow = () => {
-    const current = watch('rawMaterials') || [];
-    setValue('rawMaterials', [...current, { rawMaterialId: '', formula: '' }]);
+    const current = watch('materias_primas') || [];
+    setValue('materias_primas', [...current, { id_amonet_materia_prima: '', formula: '' }]);
   };
 
   const removeRow = (index: number) => {
-    const current = watch('rawMaterials') || [];
+    const current = watch('materias_primas') || [];
     if (current.length > 1) {
       setValue(
-        'rawMaterials',
+        'materias_primas',
         current.filter((_, i) => i !== index)
       );
     }
   };
 
   const onSubmit = async (data: ProductFormData) => {
-    const filteredMaterials = data.rawMaterials.filter((rm) => rm.rawMaterialId && rm.formula);
+    const filteredMaterials = data.materias_primas.filter((rm) => rm.id_amonet_materia_prima && rm.formula);
     if (filteredMaterials.length === 0) {
       toast({ title: 'Error', description: 'Al menos una materia prima es requerida', variant: 'error' });
       return;
@@ -88,74 +92,54 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
 
     try {
       if (mode === 'create') {
-        create({
-          name: data.name,
-          code: data.code,
-          brandId: data.brandId,
-          rawMaterials: filteredMaterials,
-        });
+        await create({ ...data, materias_primas: filteredMaterials });
         toast({ title: 'Producto creado', description: 'El producto se ha creado correctamente', variant: 'success' });
       } else {
         if (!entityId) return;
-        update(entityId, {
-          name: data.name,
-          code: data.code,
-          brandId: data.brandId,
-          rawMaterials: filteredMaterials,
-        });
+        await update(entityId, { ...data, materias_primas: filteredMaterials });
         toast({ title: 'Producto actualizado', description: 'El producto se ha actualizado correctamente', variant: 'success' });
       }
       router.push('/products');
-    } catch {
-      toast({ title: 'Error', description: 'Ha ocurrido un error inesperado', variant: 'error' });
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
     }
   };
-
-  const brandId = watch('brandId');
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
         <h3 className="text-sm font-medium text-gray-900 uppercase tracking-wide">Datos Generales</h3>
 
-        <FormField label="Nombre" error={errors.name?.message}>
-          <input
-            {...register('name')}
-            type="text"
-            className="flex h-9 w-full rounded-8 border border-border-tabla bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gris-tecnico focus:border-2 focus:border-violet-lab focus:outline-none"
-            placeholder="Nombre del producto"
-          />
+        <FormField label="Nombre" error={errors.nombre?.message}>
+          <Input {...register('nombre')} placeholder="Nombre del producto" />
         </FormField>
 
-        <FormField label="Código" error={errors.code?.message}>
-          <input
-            {...register('code')}
-            type="text"
-            className="flex h-9 w-full rounded-8 border border-border-tabla bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gris-tecnico focus:border-2 focus:border-violet-lab focus:outline-none"
-            placeholder="Código alfanumérico"
-          />
+        <FormField label="Código" error={errors.codigo?.message}>
+          <Input {...register('codigo')} placeholder="Código alfanumérico" />
         </FormField>
 
-        <FormField label="Marca" error={errors.brandId?.message}>
-          <Select value={brandId} onValueChange={(value) => setValue('brandId', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona una marca" />
-            </SelectTrigger>
-            <SelectContent>
-              {brands.length === 0 ? (
-                <SelectItem value="no-brands" disabled>
-                  No hay marcas disponibles
-                </SelectItem>
-              ) : (
-                brands.map((brand) => (
-                  <SelectItem key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </FormField>
+        <Controller
+          name="id_amonet_marca"
+          control={control}
+          render={({ field }) => (
+            <FormField label="Marca" error={errors.id_amonet_marca?.message}>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  {brands.length === 0 ? (
+                    <SelectItem value="no-brands" disabled>No hay marcas disponibles</SelectItem>
+                  ) : (
+                    brands.map((brand) => (
+                      <SelectItem key={brand.id} value={brand.id}>{brand.nombre}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
+        />
       </div>
 
       <div className="space-y-4">
@@ -167,15 +151,15 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
           </Button>
         </div>
 
-        {errors.rawMaterials?.message && (
-          <p className="text-xs text-coral-alerta">{errors.rawMaterials.message}</p>
+        {errors.materias_primas?.message && (
+          <p className="text-xs text-coral-alerta">{errors.materias_primas.message}</p>
         )}
 
         <div className="space-y-3">
           {watchedRawMaterials?.map((row, index) => {
             const usedIds = watchedRawMaterials
               .filter((_, i) => i !== index)
-              .map((r) => r.rawMaterialId)
+              .map((r) => r.id_amonet_materia_prima)
               .filter(Boolean);
             const available = availableMaterials(usedIds);
 
@@ -184,29 +168,22 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
                 <div className="flex-1 space-y-1">
                   <label className="text-xs font-medium text-gray-900">Materia Prima</label>
                   <Controller
-                    name={`rawMaterials.${index}.rawMaterialId` as const}
+                    name={`materias_primas.${index}.id_amonet_materia_prima` as const}
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
+                      <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecciona una materia prima" />
                         </SelectTrigger>
                         <SelectContent>
                           {available.length === 0 ? (
-                            <SelectItem value="no-materials" disabled>
-                              No hay materias primas disponibles
-                            </SelectItem>
+                            <SelectItem value="no-materials" disabled>No hay materias primas disponibles</SelectItem>
                           ) : (
                             available.map((material) => (
                               <SelectItem key={material.id} value={material.id}>
-                                <span className="inline-flex items-center">
-                                  <Badge variant={material.type === 'chemical' ? 'chemical' : 'packaging'} className="mr-2">
-                                    ●
-                                  </Badge>
-                                  {material.name}
+                                <span className="inline-flex items-center gap-2">
+                                  <span className="w-2 h-2 rounded-full bg-violet-lab" />
+                                  {material.nombre}
                                 </span>
                               </SelectItem>
                             ))
@@ -220,13 +197,10 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
                 <div className="flex-[2] space-y-1">
                   <label className="text-xs font-medium text-gray-900">Fórmula</label>
                   <Controller
-                    name={`rawMaterials.${index}.formula` as const}
+                    name={`materias_primas.${index}.formula` as const}
                     control={control}
                     render={({ field }) => (
-                      <FormulaInput
-                        value={field.value || ''}
-                        onChange={field.onChange}
-                      />
+                      <FormulaInput value={field.value || ''} onChange={field.onChange} />
                     )}
                   />
                 </div>

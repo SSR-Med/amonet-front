@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { ProductForm } from '@/components/forms';
@@ -8,9 +9,15 @@ import { useProductStore } from '@/stores';
 export default function EditProductPage() {
   const params = useParams();
   const router = useRouter();
-  const { getById } = useProductStore();
+  const { getById, getAll, items, loading } = useProductStore();
+
+  useEffect(() => {
+    if (items.length === 0) getAll();
+  }, [items.length, getAll]);
 
   const product = getById(params.id as string);
+
+  if (loading && !product) return null;
 
   if (!product) {
     router.push('/products');
@@ -24,10 +31,13 @@ export default function EditProductPage() {
         <div className="max-w-2xl">
           <ProductForm
             initialData={{
-              name: product.name,
-              code: product.code,
-              brandId: product.brandId,
-              rawMaterials: product.rawMaterials,
+              codigo: product.codigo,
+              nombre: product.nombre,
+              id_amonet_marca: product.marca.id,
+              materias_primas: product.materias_primas.map((mp) => ({
+                id_amonet_materia_prima: mp.id,
+                formula: mp.formula,
+              })),
             }}
             entityId={product.id}
             mode="edit"
