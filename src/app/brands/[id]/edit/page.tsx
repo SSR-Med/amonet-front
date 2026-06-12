@@ -2,11 +2,13 @@
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { BrandForm } from '@/components/forms';
 import { useBrandStore } from '@/stores';
 
 export default function EditBrandPage() {
+  const { isAdmin } = useAuth();
   const params = useParams();
   const router = useRouter();
   const { getById, getAll, items: brands, loading } = useBrandStore();
@@ -16,6 +18,12 @@ export default function EditBrandPage() {
       getAll();
     }
   }, [brands.length, getAll]);
+
+  useEffect(() => {
+    if (!isAdmin) router.push('/brands');
+  }, [isAdmin, router]);
+
+  if (!isAdmin) return null;
 
   const brand = getById(params.id as string);
 

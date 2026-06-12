@@ -2,24 +2,27 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Tag, FlaskConical, Variable, LayoutDashboard } from 'lucide-react';
+import { Package, Tag, FlaskConical, Variable, LayoutDashboard, Users, UserCircle, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
 
 const modules = [
-  { name: 'Productos', href: '/products', icon: Package },
-  { name: 'Marcas', href: '/brands', icon: Tag },
-  { name: 'Materias Primas', href: '/raw-materials', icon: FlaskConical },
-  { name: 'Variables Globales', href: '/product-variables', icon: Variable },
+  { name: 'Productos', href: '/products', icon: Package, adminOnly: false },
+  { name: 'Marcas', href: '/brands', icon: Tag, adminOnly: false },
+  { name: 'Materias Primas', href: '/raw-materials', icon: FlaskConical, adminOnly: false },
+  { name: 'Variables Globales', href: '/product-variables', icon: Variable, adminOnly: false },
+  { name: 'Usuarios', href: '/users', icon: Users, adminOnly: true },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { isAdmin, logout } = useAuth();
 
   const isActive = (href: string) => {
     if (href === '/products') {
       return pathname === '/products' || pathname?.startsWith('/products');
     }
-    return pathname === href || pathname?.startsWith(href);
+    return pathname === href || pathname?.startsWith(href + '/') || pathname === href;
   };
 
   return (
@@ -36,28 +39,46 @@ export function Sidebar() {
           <p className="px-3 py-2 text-xs font-medium text-gris-tecnico uppercase tracking-wider">
             Módulos
           </p>
-          {modules.map((module) => {
-            const Icon = module.icon;
-            const active = isActive(module.href);
-            return (
-              <Link
-                key={module.href}
-                href={module.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-8 px-3 py-2 text-sm font-medium transition-colors',
-                  active
-                    ? 'bg-violet-lab text-white'
-                    : 'text-lila-800 hover:bg-lila-50'
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                {module.name}
-              </Link>
-            );
-          })}
+          {modules
+            .filter((m) => !m.adminOnly || isAdmin)
+            .map((module) => {
+              const Icon = module.icon;
+              const active = isActive(module.href);
+              return (
+                <Link
+                  key={module.href}
+                  href={module.href}
+                  className={cn(
+                    'flex items-center gap-3 rounded-8 px-3 py-2 text-sm font-medium transition-colors',
+                    active
+                      ? 'bg-violet-lab text-white'
+                      : 'text-lila-800 hover:bg-lila-50'
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {module.name}
+                </Link>
+              );
+            })}
+
+          <p className="mt-6 px-3 py-2 text-xs font-medium text-gris-tecnico uppercase tracking-wider">
+            Cuenta
+          </p>
+          <Link
+            href="/profile"
+            className={cn(
+              'flex items-center gap-3 rounded-8 px-3 py-2 text-sm font-medium transition-colors',
+              isActive('/profile')
+                ? 'bg-violet-lab text-white'
+                : 'text-lila-800 hover:bg-lila-50'
+            )}
+          >
+            <UserCircle className="h-5 w-5" />
+            Mis Datos
+          </Link>
         </nav>
 
-        <div className="border-t border-border-tabla p-4">
+        <div className="border-t border-border-tabla p-4 space-y-1">
           <Link
             href="/"
             className={cn(
@@ -67,6 +88,13 @@ export function Sidebar() {
             <LayoutDashboard className="h-5 w-5" />
             Dashboard
           </Link>
+          <button
+            onClick={logout}
+            className="flex w-full items-center gap-3 rounded-8 px-3 py-2 text-sm font-medium text-coral-alerta hover:bg-rose-50 transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            Cerrar Sesión
+          </button>
         </div>
       </div>
     </aside>

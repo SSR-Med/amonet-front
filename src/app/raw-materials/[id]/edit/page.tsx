@@ -2,11 +2,13 @@
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { RawMaterialForm } from '@/components/forms';
 import { useRawMaterialStore } from '@/stores';
 
 export default function EditRawMaterialPage() {
+  const { isAdmin } = useAuth();
   const params = useParams();
   const router = useRouter();
   const { getById, getAll, items, loading } = useRawMaterialStore();
@@ -16,6 +18,12 @@ export default function EditRawMaterialPage() {
       getAll();
     }
   }, [items.length, getAll]);
+
+  useEffect(() => {
+    if (!isAdmin) router.push('/raw-materials');
+  }, [isAdmin, router]);
+
+  if (!isAdmin) return null;
 
   const rawMaterial = getById(params.id as string);
 

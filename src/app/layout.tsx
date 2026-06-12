@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Providers } from '@/components/providers';
-import { Sidebar } from '@/components/layout/sidebar';
-import { HydrationGate } from '@/components/hydration-gate';
+import { AppShell } from '@/components/layout/app-shell';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -18,12 +17,7 @@ export default function RootLayout({
     <html lang="es">
       <body className="antialiased">
         <Providers>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="ml-60 flex-1">
-              <HydrationGate>{children}</HydrationGate>
-            </main>
-          </div>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>

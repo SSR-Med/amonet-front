@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { useRawMaterialStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -12,6 +13,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { RawMaterial } from '@/types';
 
 export default function RawMaterialsPage() {
+  const { isAdmin } = useAuth();
   const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteRawMaterial } = useRawMaterialStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -85,8 +87,7 @@ export default function RawMaterialsPage() {
         <EmptyState
           title="Aún no hay materias primas"
           description="Crea tu primera materia prima para comenzar a gestionar tus productos."
-          href="/raw-materials/new"
-          hrefLabel="Crear materia prima"
+          {...(isAdmin ? { href: '/raw-materials/new', hrefLabel: 'Crear materia prima' } : {})}
           icon="material"
         />
       </>
@@ -98,15 +99,13 @@ export default function RawMaterialsPage() {
       <PageHeader
         title="Materias Primas"
         description="Gestiona las materias primas de tus productos"
-        createHref="/raw-materials/new"
-        createLabel="Crear materia prima"
+        {...(isAdmin ? { createHref: '/raw-materials/new', createLabel: 'Crear materia prima' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={items}
           columns={columns}
-          editHref={(rm) => `/raw-materials/${rm.id}/edit`}
-          onDelete={handleDelete}
+          {...(isAdmin ? { editHref: (rm: RawMaterial) => `/raw-materials/${rm.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -115,14 +114,16 @@ export default function RawMaterialsPage() {
           }}
         />
       </div>
-      <ConfirmDeleteModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        title="¿Eliminar materia prima?"
-        description={itemToDelete ? 'Esta materia prima está asignada a productos existentes' : undefined}
-        itemName={itemToDelete?.nombre || ''}
-        onConfirm={confirmDelete}
-      />
+      {isAdmin && (
+        <ConfirmDeleteModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          title="¿Eliminar materia prima?"
+          description={itemToDelete ? 'Esta materia prima está asignada a productos existentes' : undefined}
+          itemName={itemToDelete?.nombre || ''}
+          onConfirm={confirmDelete}
+        />
+      )}
     </>
   );
 }

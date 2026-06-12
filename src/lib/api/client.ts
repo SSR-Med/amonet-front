@@ -1,5 +1,10 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
+function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('amonet_token');
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -12,8 +17,12 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...options,
   });
 
@@ -40,6 +49,10 @@ export function post<T>(path: string, body: unknown): Promise<T> {
 
 export function put<T>(path: string, body: unknown): Promise<T> {
   return request<T>(path, { method: 'PUT', body: JSON.stringify(body) });
+}
+
+export function patch<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, { method: 'PATCH', body: JSON.stringify(body) });
 }
 
 export function del<T = void>(path: string): Promise<T> {

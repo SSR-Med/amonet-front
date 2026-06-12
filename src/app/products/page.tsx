@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { useProductStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -12,6 +13,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Product } from '@/types';
 
 export default function ProductsPage() {
+  const { isAdmin } = useAuth();
   const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteProduct } = useProductStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -88,8 +90,7 @@ export default function ProductsPage() {
         <EmptyState
           title="Aún no hay productos"
           description="Crea tu primer producto para comenzar a gestionar tu inventario."
-          href="/products/new"
-          hrefLabel="Crear producto"
+          {...(isAdmin ? { href: '/products/new', hrefLabel: 'Crear producto' } : {})}
           icon="product"
         />
       </>
@@ -101,15 +102,13 @@ export default function ProductsPage() {
       <PageHeader
         title="Productos"
         description="Gestiona tus productos terminados"
-        createHref="/products/new"
-        createLabel="Crear producto"
+        {...(isAdmin ? { createHref: '/products/new', createLabel: 'Crear producto' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={items}
           columns={columns}
-          editHref={(product) => `/products/${product.id}/edit`}
-          onDelete={handleDelete}
+          {...(isAdmin ? { editHref: (product: Product) => `/products/${product.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -118,13 +117,15 @@ export default function ProductsPage() {
           }}
         />
       </div>
-      <ConfirmDeleteModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        title="¿Eliminar producto?"
-        itemName={itemToDelete?.nombre || ''}
-        onConfirm={confirmDelete}
-      />
+      {isAdmin && (
+        <ConfirmDeleteModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          title="¿Eliminar producto?"
+          itemName={itemToDelete?.nombre || ''}
+          onConfirm={confirmDelete}
+        />
+      )}
     </>
   );
 }

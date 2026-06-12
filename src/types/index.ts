@@ -35,6 +35,19 @@ export interface Product {
   materias_primas: ProductRawMaterial[];
 }
 
+export interface User {
+  id: string;
+  documento: string;
+  nombre: string;
+  rol: string;
+  activo: boolean;
+}
+
+export interface Rol {
+  id: string;
+  nombre: string;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   current_page: number;

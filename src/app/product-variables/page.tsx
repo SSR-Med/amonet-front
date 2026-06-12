@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { useProductVariableStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -11,6 +12,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { ProductVariable } from '@/types';
 
 export default function ProductVariablesPage() {
+  const { isAdmin } = useAuth();
   const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteVariable } = useProductVariableStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -68,8 +70,7 @@ export default function ProductVariablesPage() {
         <EmptyState
           title="Aún no hay variables"
           description="Crea tu primera variable global para usarla en las fórmulas de tus productos."
-          href="/product-variables/new"
-          hrefLabel="Crear variable"
+          {...(isAdmin ? { href: '/product-variables/new', hrefLabel: 'Crear variable' } : {})}
           icon="variable"
         />
       </>
@@ -81,15 +82,13 @@ export default function ProductVariablesPage() {
       <PageHeader
         title="Variables Globales"
         description="Gestiona las variables disponibles para fórmulas"
-        createHref="/product-variables/new"
-        createLabel="Crear variable"
+        {...(isAdmin ? { createHref: '/product-variables/new', createLabel: 'Crear variable' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={items}
           columns={columns}
-          editHref={(pv) => `/product-variables/${pv.id}/edit`}
-          onDelete={handleDelete}
+          {...(isAdmin ? { editHref: (pv: ProductVariable) => `/product-variables/${pv.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -98,13 +97,15 @@ export default function ProductVariablesPage() {
           }}
         />
       </div>
-      <ConfirmDeleteModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        title="¿Eliminar variable?"
-        itemName={itemToDelete?.nombre || ''}
-        onConfirm={confirmDelete}
-      />
+      {isAdmin && (
+        <ConfirmDeleteModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          title="¿Eliminar variable?"
+          itemName={itemToDelete?.nombre || ''}
+          onConfirm={confirmDelete}
+        />
+      )}
     </>
   );
 }

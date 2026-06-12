@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { useBrandStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -11,6 +12,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Brand } from '@/types';
 
 export default function BrandsPage() {
+  const { isAdmin } = useAuth();
   const { items: brands, totalItems, currentPage, pageSize, loading, getAll, delete: deleteBrand } = useBrandStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -66,8 +68,7 @@ export default function BrandsPage() {
         <EmptyState
           title="Aún no hay marcas"
           description="Crea tu primera marca para comenzar a gestionar tus productos."
-          href="/brands/new"
-          hrefLabel="Crear marca"
+          {...(isAdmin ? { href: '/brands/new', hrefLabel: 'Crear marca' } : {})}
           icon="brand"
         />
       </>
@@ -79,15 +80,13 @@ export default function BrandsPage() {
       <PageHeader
         title="Marcas"
         description="Gestiona las marcas de tus productos"
-        createHref="/brands/new"
-        createLabel="Crear marca"
+        {...(isAdmin ? { createHref: '/brands/new', createLabel: 'Crear marca' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={brands}
           columns={columns}
-          editHref={(brand) => `/brands/${brand.id}/edit`}
-          onDelete={handleDelete}
+          {...(isAdmin ? { editHref: (brand: Brand) => `/brands/${brand.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -96,14 +95,16 @@ export default function BrandsPage() {
           }}
         />
       </div>
-      <ConfirmDeleteModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        title="¿Eliminar marca?"
-        description={itemToDelete ? 'Esta marca está asignada a productos existentes' : undefined}
-        itemName={itemToDelete?.nombre || ''}
-        onConfirm={confirmDelete}
-      />
+      {isAdmin && (
+        <ConfirmDeleteModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          title="¿Eliminar marca?"
+          description={itemToDelete ? 'Esta marca está asignada a productos existentes' : undefined}
+          itemName={itemToDelete?.nombre || ''}
+          onConfirm={confirmDelete}
+        />
+      )}
     </>
   );
 }

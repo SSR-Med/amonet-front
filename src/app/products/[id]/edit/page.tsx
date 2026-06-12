@@ -2,11 +2,13 @@
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { ProductForm } from '@/components/forms';
 import { useProductStore } from '@/stores';
 
 export default function EditProductPage() {
+  const { isAdmin } = useAuth();
   const params = useParams();
   const router = useRouter();
   const { getById, getAll, items, loading } = useProductStore();
@@ -14,6 +16,12 @@ export default function EditProductPage() {
   useEffect(() => {
     if (items.length === 0) getAll();
   }, [items.length, getAll]);
+
+  useEffect(() => {
+    if (!isAdmin) router.push('/products');
+  }, [isAdmin, router]);
+
+  if (!isAdmin) return null;
 
   const product = getById(params.id as string);
 
