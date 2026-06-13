@@ -48,6 +48,13 @@ export interface Rol {
   nombre: string;
 }
 
+export interface LogItem {
+  nombre: string;
+  peso: number | null;
+  fecha: string;
+  origen: string;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   current_page: number;
