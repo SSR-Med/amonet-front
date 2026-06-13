@@ -24,7 +24,7 @@ export default function LogsPage() {
   const [items, setItems] = useState<LogItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
@@ -158,12 +158,24 @@ export default function LogsPage() {
               </tbody>
             </table>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border-tabla">
-                <span className="text-sm text-gris-tecnico">
-                  Página {currentPage} de {totalPages} ({totalItems} registros)
-                </span>
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border-tabla">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gris-tecnico">Registros por página</span>
+                <select
+                  className="text-sm border border-border-tabla rounded-8 px-2 py-1 bg-white"
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                >
+                  {[10, 20, 50, 100].map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              {totalPages > 1 && (
                 <div className="flex items-center gap-2">
+                  <span className="text-sm text-gris-tecnico mr-2">
+                    Página {currentPage} de {totalPages} ({totalItems} registros)
+                  </span>
                   <Button variant="secondary" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
                     Anterior
                   </Button>
@@ -171,8 +183,8 @@ export default function LogsPage() {
                     Siguiente
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>

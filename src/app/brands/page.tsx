@@ -27,6 +27,10 @@ export default function BrandsPage() {
     fetchBrands();
   }, [fetchBrands]);
 
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    getAll(1, newPageSize);
+  }, [getAll]);
+
   const handleDelete = useCallback((brand: Brand) => {
     setItemToDelete(brand);
     setDeleteModalOpen(true);
@@ -92,6 +96,7 @@ export default function BrandsPage() {
             totalItems,
             pageSize,
             onPageChange: fetchBrands,
+            onPageSizeChange: handlePageSizeChange,
           }}
         />
       </div>

@@ -28,6 +28,10 @@ export default function RawMaterialsPage() {
     fetch();
   }, [fetch]);
 
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    getAll(1, newPageSize);
+  }, [getAll]);
+
   const handleDelete = useCallback((rawMaterial: RawMaterial) => {
     setItemToDelete(rawMaterial);
     setDeleteModalOpen(true);
@@ -111,6 +115,7 @@ export default function RawMaterialsPage() {
             totalItems,
             pageSize,
             onPageChange: fetch,
+            onPageSizeChange: handlePageSizeChange,
           }}
         />
       </div>

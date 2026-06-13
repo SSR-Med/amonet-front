@@ -23,6 +23,7 @@ interface PaginationProps {
   totalItems: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 interface EntityTableProps<T extends { id: string }> {
@@ -99,28 +100,44 @@ export function EntityTable<T extends { id: string }>({
         </TableBody>
       </Table>
 
-      {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-2 py-4">
-          <span className="text-sm text-gris-tecnico">
-            Página {pagination.currentPage} de {totalPages} ({pagination.totalItems} registros)
-          </span>
+      {pagination && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border-tabla">
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={pagination.currentPage <= 1}
-              onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
+            <span className="text-sm text-gris-tecnico">Registros por página</span>
+            <select
+              className="text-sm border border-border-tabla rounded-8 px-2 py-1 bg-white"
+              value={pagination.pageSize}
+              onChange={(e) => pagination.onPageSizeChange?.(Number(e.target.value))}
             >
-              Anterior
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={pagination.currentPage >= totalPages}
-              onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-            >
-              Siguiente
-            </Button>
+              {[10, 20, 50, 100].map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gris-tecnico mr-2">
+              Página {pagination.currentPage} de {totalPages} ({pagination.totalItems} registros)
+            </span>
+            {totalPages > 1 && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={pagination.currentPage <= 1}
+                  onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={pagination.currentPage >= totalPages}
+                  onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
+                >
+                  Siguiente
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

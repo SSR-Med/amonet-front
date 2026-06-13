@@ -26,6 +26,10 @@ export default function UsersPage() {
     fetchUsers();
   }, [fetchUsers]);
 
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    getAll(1, newPageSize);
+  }, [getAll]);
+
   const handleDelete = useCallback((user: User) => {
     setItemToDelete(user);
     setDeleteModalOpen(true);
@@ -109,6 +113,7 @@ export default function UsersPage() {
             totalItems,
             pageSize,
             onPageChange: fetchUsers,
+            onPageSizeChange: handlePageSizeChange,
           }}
         />
       </div>

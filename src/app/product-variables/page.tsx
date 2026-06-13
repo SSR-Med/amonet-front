@@ -27,6 +27,10 @@ export default function ProductVariablesPage() {
     fetch();
   }, [fetch]);
 
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    getAll(1, newPageSize);
+  }, [getAll]);
+
   const handleDelete = useCallback((variable: ProductVariable) => {
     setItemToDelete(variable);
     setDeleteModalOpen(true);
@@ -94,6 +98,7 @@ export default function ProductVariablesPage() {
             totalItems,
             pageSize,
             onPageChange: fetch,
+            onPageSizeChange: handlePageSizeChange,
           }}
         />
       </div>
