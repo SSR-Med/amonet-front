@@ -62,11 +62,17 @@ export interface UsuarioInfo {
   nombre: string;
 }
 
+export interface ContenedorItem {
+  contador: number;
+  cantidad: number;
+}
+
 export interface InventarioItem {
   id: string;
   fecha_ingreso: string;
   numero_ingreso: string;
   materia_prima_nombre: string;
+  unidad_abreviacion: string;
   proveedor: string;
   lote: string;
   fecha_vencimiento: string;
@@ -75,6 +81,7 @@ export interface InventarioItem {
   ruta_evidencia: string;
   cantidad_total: number;
   numero_contenedores: number;
+  contenedores: ContenedorItem[];
 }
 
 export interface InventarioFormItem {

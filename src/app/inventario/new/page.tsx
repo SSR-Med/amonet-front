@@ -74,6 +74,12 @@ export default function NewInventarioPage() {
       return;
     }
 
+    const hasNegative = items.some((i) => i.cantidades.some((c) => c < 0));
+    if (hasNegative) {
+      toast({ title: 'Error', description: 'Las cantidades no pueden ser negativas', variant: 'error' });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = items.map((i) => ({
@@ -149,8 +155,9 @@ export default function NewInventarioPage() {
                   <Input
                     type="number"
                     step="any"
+                    min={0}
                     value={cant}
-                    onChange={(e) => updateCantidad(item.id, idx, Number(e.target.value))}
+                    onChange={(e) => updateCantidad(item.id, idx, Math.max(0, Number(e.target.value)))}
                     className="w-32"
                   />
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeCantidad(item.id, idx)}>

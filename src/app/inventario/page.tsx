@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Fragment } from 'react';
+import { Search, Download, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,7 @@ export default function InventarioPage() {
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
   const [filtroFechaFin, setFiltroFechaFin] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (materiasPrimas.length === 0) loadMateriasPrimas();
@@ -160,32 +162,60 @@ export default function InventarioPage() {
                     <th className="text-left px-3 py-3 font-medium text-gris-tecnico">Venc.</th>
                     <th className="text-left px-3 py-3 font-medium text-gris-tecnico">Status</th>
                     <th className="text-right px-3 py-3 font-medium text-gris-tecnico">Total</th>
+                    <th className="text-left px-3 py-3 font-medium text-gris-tecnico">Ud.</th>
                     <th className="text-right px-3 py-3 font-medium text-gris-tecnico">Cont.</th>
                     <th className="w-16 px-3 py-3 font-medium text-gris-tecnico">Evid.</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.map((item) => (
-                    <tr key={item.id} className="border-b border-border-tabla hover:bg-lila-50">
-                      <td className="px-3 py-3 font-medium text-gray-900">{item.numero_ingreso}</td>
-                      <td className="px-3 py-3 text-gray-700">{item.materia_prima_nombre}</td>
-                      <td className="px-3 py-3 text-gray-700">{item.proveedor}</td>
-                      <td className="px-3 py-3 text-gray-700">{item.lote}</td>
-                      <td className="px-3 py-3 text-gray-700 text-xs">{formatFecha(item.fecha_ingreso)}</td>
-                      <td className="px-3 py-3 text-gray-700 text-xs">{formatFecha(item.fecha_vencimiento)}</td>
-                      <td className="px-3 py-3">
-                        {item.status === null && <Badge variant="warning">Pendiente</Badge>}
-                        {item.status === true && <Badge variant="success">Aprobado</Badge>}
-                        {item.status === false && <Badge variant="error">Rechazado</Badge>}
-                      </td>
-                      <td className="px-3 py-3 text-right font-medium">{item.cantidad_total.toFixed(2)}</td>
-                      <td className="px-3 py-3 text-right text-gris-tecnico">{item.numero_contenedores}</td>
-                      <td className="px-3 py-3">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(item)} title="Descargar evidencia">
-                          <Download className="h-4 w-4 text-violet-lab" />
-                        </Button>
-                      </td>
-                    </tr>
+                    <Fragment key={item.id}>
+                      <tr
+                        className="border-b border-border-tabla hover:bg-lila-50 cursor-pointer"
+                        onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                      >
+                        <td className="px-3 py-3 font-medium text-gray-900">{item.numero_ingreso}</td>
+                        <td className="px-3 py-3 text-gray-700">{item.materia_prima_nombre}</td>
+                        <td className="px-3 py-3 text-gray-700">{item.proveedor}</td>
+                        <td className="px-3 py-3 text-gray-700">{item.lote}</td>
+                        <td className="px-3 py-3 text-gray-700 text-xs">{formatFecha(item.fecha_ingreso)}</td>
+                        <td className="px-3 py-3 text-gray-700 text-xs">{formatFecha(item.fecha_vencimiento)}</td>
+                        <td className="px-3 py-3">
+                          {item.status === null && <Badge variant="warning">Pendiente</Badge>}
+                          {item.status === true && <Badge variant="success">Aprobado</Badge>}
+                          {item.status === false && <Badge variant="error">Rechazado</Badge>}
+                        </td>
+                        <td className="px-3 py-3 text-right font-medium">{item.cantidad_total.toFixed(2)}</td>
+                        <td className="px-3 py-3 text-gray-700">{item.unidad_abreviacion}</td>
+                        <td className="px-3 py-3 text-right text-gris-tecnico">{item.numero_contenedores}</td>
+                        <td className="px-3 py-3">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => { e.stopPropagation(); handleDownload(item); }}
+                            title="Descargar evidencia"
+                          >
+                            <Download className="h-4 w-4 text-violet-lab" />
+                          </Button>
+                        </td>
+                      </tr>
+                      {expandedId === item.id && (
+                        <tr className="bg-lila-50">
+                          <td colSpan={11} className="px-6 py-3">
+                            <p className="text-xs font-medium text-gris-tecnico mb-2">Contenedores</p>
+                            <div className="space-y-1">
+                              {item.contenedores.map((c) => (
+                                <div key={c.contador} className="flex items-center gap-3 text-sm">
+                                  <span className="text-gris-tecnico w-6">#{c.contador}</span>
+                                  <span className="font-medium text-gray-900">{c.cantidad.toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
