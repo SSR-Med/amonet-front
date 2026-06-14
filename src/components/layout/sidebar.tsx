@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Tag, FlaskConical, Variable, LayoutDashboard, Users, UserCircle, LogOut, FileText } from 'lucide-react';
+import { Package, Tag, FlaskConical, Variable, LayoutDashboard, Users, UserCircle, LogOut, FileText, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 
@@ -12,6 +12,7 @@ const modules = [
   { name: 'Materias Primas', href: '/raw-materials', icon: FlaskConical, adminOnly: false },
   { name: 'Variables Globales', href: '/product-variables', icon: Variable, adminOnly: false },
   { name: 'Usuarios', href: '/users', icon: Users, adminOnly: true },
+  { name: 'Inventario', href: '/inventario', icon: Archive, adminOnly: false },
   { name: 'Logs', href: '/logs', icon: FileText, adminOnly: true },
 ];
 

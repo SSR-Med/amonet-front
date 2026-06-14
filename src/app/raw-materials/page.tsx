@@ -82,6 +82,15 @@ export default function RawMaterialsPage() {
         <span className="text-sm text-gris-tecnico">{rm.tipo_unidad.abreviacion}</span>
       ),
     },
+    {
+      key: 'cantidad',
+      header: 'Disponible',
+      render: (rm: RawMaterial) => (
+        <span className="font-medium text-gray-900">
+          {rm.cantidad_disponible.toFixed(2)}
+        </span>
+      ),
+    },
   ];
 
   if (!loading && items.length === 0) {

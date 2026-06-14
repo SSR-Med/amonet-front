@@ -14,6 +14,7 @@ export interface RawMaterial {
   nombre: string;
   tipo_materia_prima: CatalogoInfo;
   tipo_unidad: CatalogoInfo;
+  cantidad_disponible: number;
 }
 
 export interface ProductVariable {
@@ -53,6 +54,35 @@ export interface LogItem {
   peso: number | null;
   fecha: string;
   origen: string;
+}
+
+export interface UsuarioInfo {
+  id: string;
+  documento: string;
+  nombre: string;
+}
+
+export interface InventarioItem {
+  id: string;
+  fecha_ingreso: string;
+  numero_ingreso: string;
+  materia_prima_nombre: string;
+  proveedor: string;
+  lote: string;
+  fecha_vencimiento: string;
+  usuario_alta: UsuarioInfo;
+  status: boolean | null;
+  ruta_evidencia: string;
+  cantidad_total: number;
+  numero_contenedores: number;
+}
+
+export interface InventarioFormItem {
+  amonet_materia_prima_id: string;
+  proveedor: string;
+  lote: string;
+  fecha_vencimiento: string;
+  cantidades: number[];
 }
 
 export interface PaginatedResponse<T> {
