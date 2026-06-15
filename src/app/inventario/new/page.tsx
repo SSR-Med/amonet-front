@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Upload } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useRawMaterialStore } from '@/stores';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/utils';
@@ -11,13 +11,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout';
 
+interface ContenedorRow {
+  cantidad: number;
+  precio: number;
+}
+
 interface ItemRow {
   id: number;
   amonet_materia_prima_id: string;
   proveedor: string;
   lote: string;
   fecha_vencimiento: string;
-  cantidades: number[];
+  contenedores: ContenedorRow[];
 }
 
 export default function NewInventarioPage() {
@@ -25,7 +30,7 @@ export default function NewInventarioPage() {
   const { toast } = useToast();
   const { items: materiasPrimas, getAll: loadMateriasPrimas } = useRawMaterialStore();
   const [items, setItems] = useState<ItemRow[]>([
-    { id: 1, amonet_materia_prima_id: '', proveedor: '', lote: '', fecha_vencimiento: '', cantidades: [] },
+    { id: 1, amonet_materia_prima_id: '', proveedor: '', lote: '', fecha_vencimiento: '', contenedores: [] },
   ]);
   const [archivo, setArchivo] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -36,7 +41,7 @@ export default function NewInventarioPage() {
   }, [materiasPrimas.length, loadMateriasPrimas]);
 
   const addItem = () => {
-    setItems((prev) => [...prev, { id: nextId, amonet_materia_prima_id: '', proveedor: '', lote: '', fecha_vencimiento: '', cantidades: [] }]);
+    setItems((prev) => [...prev, { id: nextId, amonet_materia_prima_id: '', proveedor: '', lote: '', fecha_vencimiento: '', contenedores: [] }]);
     setNextId((n) => n + 1);
   };
 
@@ -44,20 +49,20 @@ export default function NewInventarioPage() {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
-  const updateItem = (id: number, field: keyof ItemRow, value: unknown) => {
+  const updateItem = (id: number, field: keyof Omit<ItemRow, 'id' | 'contenedores'>, value: string) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
   };
 
-  const addCantidad = (itemId: number) => {
-    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, cantidades: [...i.cantidades, 0] } : i)));
+  const addContenedor = (itemId: number) => {
+    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, contenedores: [...i.contenedores, { cantidad: 0, precio: 0 }] } : i)));
   };
 
-  const removeCantidad = (itemId: number, index: number) => {
-    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, cantidades: i.cantidades.filter((_, idx) => idx !== index) } : i)));
+  const removeContenedor = (itemId: number, index: number) => {
+    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, contenedores: i.contenedores.filter((_, idx) => idx !== index) } : i)));
   };
 
-  const updateCantidad = (itemId: number, index: number, value: number) => {
-    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, cantidades: i.cantidades.map((c, idx) => (idx === index ? value : c)) } : i)));
+  const updateContenedorField = (itemId: number, index: number, field: keyof ContenedorRow, value: number) => {
+    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, contenedores: i.contenedores.map((c, idx) => (idx === index ? { ...c, [field]: Math.max(0, value) } : c)) } : i)));
   };
 
   const handleSubmit = async () => {
@@ -67,16 +72,16 @@ export default function NewInventarioPage() {
     }
 
     const hasEmpty = items.some(
-      (i) => !i.amonet_materia_prima_id || !i.proveedor || !i.lote || !i.fecha_vencimiento || i.cantidades.length === 0
+      (i) => !i.amonet_materia_prima_id || !i.proveedor || !i.lote || !i.fecha_vencimiento || i.contenedores.length === 0
     );
     if (hasEmpty) {
       toast({ title: 'Error', description: 'Completa todos los campos requeridos', variant: 'error' });
       return;
     }
 
-    const hasNegative = items.some((i) => i.cantidades.some((c) => c < 0));
+    const hasNegative = items.some((i) => i.contenedores.some((c) => c.cantidad < 0 || c.precio < 0));
     if (hasNegative) {
-      toast({ title: 'Error', description: 'Las cantidades no pueden ser negativas', variant: 'error' });
+      toast({ title: 'Error', description: 'Las cantidades y precios no pueden ser negativos', variant: 'error' });
       return;
     }
 
@@ -87,7 +92,7 @@ export default function NewInventarioPage() {
         proveedor: i.proveedor,
         lote: i.lote,
         fecha_vencimiento: i.fecha_vencimiento,
-        cantidades: i.cantidades,
+        contenedores: i.contenedores,
       }));
       await inventarioApi.createInventario(payload, archivo);
       toast({ title: 'Inventario creado', description: 'El inventario se ha creado correctamente', variant: 'success' });
@@ -144,29 +149,43 @@ export default function NewInventarioPage() {
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-gris-tecnico">Cantidades por contenedor</span>
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => addCantidad(item.id)}>
+                <span className="text-xs font-medium text-gris-tecnico">Contenedores</span>
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => addContenedor(item.id)}>
                   <Plus className="h-3 w-3 mr-1" /> Agregar
                 </Button>
               </div>
-              {item.cantidades.map((cant, idx) => (
-                <div key={idx} className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2 text-xs font-medium text-gris-tecnico">
+                <span className="w-6" />
+                <span className="w-28">Cantidad</span>
+                <span className="w-28">Precio ($)</span>
+                <span className="w-8" />
+              </div>
+              {item.contenedores.map((cont, idx) => (
+                <div key={idx} className="flex items-center gap-2 mt-1">
                   <span className="text-xs text-gris-tecnico w-6">{idx + 1}.</span>
                   <Input
                     type="number"
-                    step="any"
                     min={0}
-                    value={cant}
-                    onChange={(e) => updateCantidad(item.id, idx, Math.max(0, Number(e.target.value)))}
-                    className="w-32"
+                    value={cont.cantidad}
+                    onChange={(e) => updateContenedorField(item.id, idx, 'cantidad', Number(e.target.value))}
+                    className="w-28"
+                    placeholder="Cant."
                   />
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeCantidad(item.id, idx)}>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={cont.precio}
+                    onChange={(e) => updateContenedorField(item.id, idx, 'precio', Number(e.target.value))}
+                    className="w-28"
+                    placeholder="Precio"
+                  />
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeContenedor(item.id, idx)}>
                     <Trash2 className="h-3 w-3 text-coral-alerta" />
                   </Button>
                 </div>
               ))}
-              {item.cantidades.length === 0 && (
-                <p className="text-xs text-gris-tecnico mt-1">Agrega al menos una cantidad</p>
+              {item.contenedores.length === 0 && (
+                <p className="text-xs text-gris-tecnico mt-1">Agrega al menos un contenedor</p>
               )}
             </div>
           </div>

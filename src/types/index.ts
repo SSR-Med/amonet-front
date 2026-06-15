@@ -65,6 +65,8 @@ export interface UsuarioInfo {
 export interface ContenedorItem {
   contador: number;
   cantidad: number;
+  precio: number;
+  precio_unidad: number;
 }
 
 export interface InventarioItem {
@@ -84,12 +86,17 @@ export interface InventarioItem {
   contenedores: ContenedorItem[];
 }
 
+export interface InventarioFormContenedor {
+  cantidad: number;
+  precio: number;
+}
+
 export interface InventarioFormItem {
   amonet_materia_prima_id: string;
   proveedor: string;
   lote: string;
   fecha_vencimiento: string;
-  cantidades: number[];
+  contenedores: InventarioFormContenedor[];
 }
 
 export interface PaginatedResponse<T> {

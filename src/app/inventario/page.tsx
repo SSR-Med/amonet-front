@@ -204,11 +204,18 @@ export default function InventarioPage() {
                         <tr className="bg-lila-50">
                           <td colSpan={11} className="px-6 py-3">
                             <p className="text-xs font-medium text-gris-tecnico mb-2">Contenedores</p>
+                            <div className="flex items-center gap-4 text-xs font-medium text-gris-tecnico mb-1 pl-10">
+                              <span className="w-24">Cantidad</span>
+                              <span className="w-24">Precio total</span>
+                              <span>Precio unitario</span>
+                            </div>
                             <div className="space-y-1">
                               {item.contenedores.map((c) => (
-                                <div key={c.contador} className="flex items-center gap-3 text-sm">
+                                <div key={c.contador} className="flex items-center gap-4 text-sm">
                                   <span className="text-gris-tecnico w-6">#{c.contador}</span>
-                                  <span className="font-medium text-gray-900">{c.cantidad.toFixed(2)}</span>
+                                  <span className="font-medium text-gray-900 w-24">{c.cantidad.toFixed(2)}</span>
+                                  <span className="text-gray-700 w-24">$ {c.precio.toLocaleString()}</span>
+                                  <span className="text-violet-lab">$ {c.precio_unidad.toFixed(2)} / {item.unidad_abreviacion}</span>
                                 </div>
                               ))}
                             </div>
