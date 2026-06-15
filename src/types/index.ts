@@ -65,6 +65,7 @@ export interface UsuarioInfo {
 export interface ContenedorItem {
   contador: number;
   cantidad: number;
+  cantidad_disponible: number;
   precio: number;
   precio_unidad: number;
 }
