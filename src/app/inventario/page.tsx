@@ -3,12 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Fragment } from 'react';
-import { Search, Download, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
+import { Search, Download, ChevronDown, ChevronUp, Check, X, Pencil } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth-context';
 import { getApiErrorMessage } from '@/lib/utils';
 import * as inventarioApi from '@/lib/api/inventario';
 import { useRawMaterialStore } from '@/stores';
@@ -17,6 +25,7 @@ import type { InventarioItem } from '@/types';
 export default function InventarioPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { isAdmin, user: currentUser } = useAuth();
   const { items: materiasPrimas, getAll: loadMateriasPrimas } = useRawMaterialStore();
 
   const [data, setData] = useState<InventarioItem[]>([]);
@@ -33,6 +42,9 @@ export default function InventarioPage() {
   const [filtroFechaFin, setFiltroFechaFin] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [rejectItem, setRejectItem] = useState<InventarioItem | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
 
   useEffect(() => {
     if (materiasPrimas.length === 0) loadMateriasPrimas();
@@ -65,6 +77,41 @@ export default function InventarioPage() {
   }, []);
 
   const handleSearch = () => fetchData(1, pageSize);
+
+  const handleApprove = async (item: InventarioItem) => {
+    try {
+      await inventarioApi.updateInventario(item.id, { status: true });
+      toast({ title: 'Inventario aprobado', description: 'Se ha aprobado correctamente', variant: 'success' });
+      fetchData(currentPage, pageSize);
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err, 'Error al aprobar'), variant: 'error' });
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectItem || !rejectReason.trim()) return;
+    setRejecting(true);
+    try {
+      await inventarioApi.updateInventario(rejectItem.id, { status: false, observacion_rechazo: rejectReason });
+      toast({ title: 'Inventario rechazado', description: 'Se ha rechazado correctamente', variant: 'success' });
+      setRejectItem(null);
+      setRejectReason('');
+      fetchData(currentPage, pageSize);
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err, 'Error al rechazar'), variant: 'error' });
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  const canReview = isAdmin;
+  const isPending = (item: InventarioItem) => item.status === null;
+
+  const canEdit = (item: InventarioItem) => {
+    if (isAdmin) return true;
+    if (currentUser?.rol === 'CALIDAD' && isPending(item)) return true;
+    return false;
+  };
 
   const handleDownload = async (item: InventarioItem) => {
     try {
@@ -160,6 +207,7 @@ export default function InventarioPage() {
                     <th className="text-left px-3 py-3 font-medium text-gris-tecnico">Lote</th>
                     <th className="text-left px-3 py-3 font-medium text-gris-tecnico">Ingreso</th>
                     <th className="text-left px-3 py-3 font-medium text-gris-tecnico">Venc.</th>
+                    <th className="text-left px-3 py-3 font-medium text-gris-tecnico">Ingresado por</th>
                     <th className="text-left px-3 py-3 font-medium text-gris-tecnico">Status</th>
                     <th className="text-right px-3 py-3 font-medium text-gris-tecnico">Total</th>
                     <th className="text-left px-3 py-3 font-medium text-gris-tecnico">Ud.</th>
@@ -180,6 +228,7 @@ export default function InventarioPage() {
                         <td className="px-3 py-3 text-gray-700">{item.lote}</td>
                         <td className="px-3 py-3 text-gray-700 text-xs">{formatFecha(item.fecha_ingreso)}</td>
                         <td className="px-3 py-3 text-gray-700 text-xs">{formatFecha(item.fecha_vencimiento)}</td>
+                        <td className="px-3 py-3 text-xs text-gray-700">{item.usuario_alta?.documento}</td>
                         <td className="px-3 py-3">
                           {item.status === null && <Badge variant="warning">Pendiente</Badge>}
                           {item.status === true && <Badge variant="success">Aprobado</Badge>}
@@ -189,20 +238,55 @@ export default function InventarioPage() {
                         <td className="px-3 py-3 text-gray-700">{item.unidad_abreviacion}</td>
                         <td className="px-3 py-3 text-right text-gris-tecnico">{item.numero_contenedores}</td>
                         <td className="px-3 py-3">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(e) => { e.stopPropagation(); handleDownload(item); }}
-                            title="Descargar evidencia"
-                          >
-                            <Download className="h-4 w-4 text-violet-lab" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            {canEdit(item) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => { e.stopPropagation(); router.push(`/inventario/${item.id}/edit`); }}
+                                title="Editar"
+                              >
+                                <Pencil className="h-4 w-4 text-violet-lab" />
+                              </Button>
+                            )}
+                            {canReview && isPending(item) && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={(e) => { e.stopPropagation(); handleApprove(item); }}
+                                  title="Aprobar"
+                                >
+                                  <Check className="h-4 w-4 text-verde-exito" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={(e) => { e.stopPropagation(); setRejectItem(item); setRejectReason(''); }}
+                                  title="Rechazar"
+                                >
+                                  <X className="h-4 w-4 text-coral-alerta" />
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => { e.stopPropagation(); handleDownload(item); }}
+                              title="Descargar evidencia"
+                            >
+                              <Download className="h-4 w-4 text-violet-lab" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                       {expandedId === item.id && (
                         <tr className="bg-lila-50">
-                          <td colSpan={11} className="px-6 py-3">
+                          <td colSpan={12} className="px-6 py-3">
                             <p className="text-xs font-medium text-gris-tecnico mb-2">Contenedores</p>
                             <div className="flex items-center gap-4 text-xs font-medium text-gris-tecnico mb-1 pl-10">
                               <span className="w-20">Cant. original</span>
@@ -221,6 +305,18 @@ export default function InventarioPage() {
                                 </div>
                               ))}
                             </div>
+                            {item.status === false && item.observacion_rechazo && (
+                              <div className="mt-3 p-3 rounded-8 bg-coral-alerta/5 border border-coral-alerta/20">
+                                <p className="text-xs font-medium text-coral-alerta mb-1">Motivo de rechazo</p>
+                                <p className="text-sm text-gray-900">{item.observacion_rechazo}</p>
+                              </div>
+                            )}
+                            {item.usuario_modifica && (
+                              <div className="mt-3 text-xs text-gris-tecnico">
+                                Modificado por {item.usuario_modifica.documento} - {item.usuario_modifica.nombre}
+                                {item.fecha_modifica && <> el {new Date(item.fecha_modifica).toLocaleString('es-PE')}</>}
+                              </div>
+                            )}
                           </td>
                         </tr>
                       )}
@@ -250,6 +346,34 @@ export default function InventarioPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!rejectItem} onOpenChange={(open) => { if (!open) setRejectItem(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rechazar inventario</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-900 mb-3">
+              Ingresa el motivo de rechazo para <strong>{rejectItem?.numero_ingreso}</strong>
+            </p>
+            <textarea
+              className="w-full rounded-8 border border-border-tabla px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-lab"
+              rows={4}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Motivo del rechazo"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="secondary" onClick={() => setRejectItem(null)} disabled={rejecting}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleReject} disabled={rejecting || !rejectReason.trim()}>
+              {rejecting ? 'Rechazando...' : 'Rechazar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

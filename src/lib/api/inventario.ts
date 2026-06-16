@@ -1,4 +1,4 @@
-import { get } from './client';
+import { get, patch } from './client';
 import type { InventarioFormItem, InventarioItem, PaginatedResponse } from '@/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -30,6 +30,28 @@ export async function downloadEvidencia(numeroIngreso: string): Promise<string> 
   }
   const data = await res.json();
   return data.url;
+}
+
+export async function updateInventario(id: string, data: Record<string, unknown>): Promise<void> {
+  return patch(`/inventario/${id}`, data);
+}
+
+export async function updateInventarioWithFile(id: string, data: Record<string, unknown>, archivo: File): Promise<void> {
+  const token = localStorage.getItem('amonet_token');
+  const formData = new FormData();
+  formData.append('data', JSON.stringify(data));
+  formData.append('archivo', archivo);
+
+  const res = await fetch(`${BASE_URL}/inventario/${id}`, {
+    method: 'PATCH',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `HTTP ${res.status}`);
+  }
 }
 
 export async function createInventario(items: InventarioFormItem[], archivo: File): Promise<void> {

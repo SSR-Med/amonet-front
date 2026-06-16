@@ -81,6 +81,9 @@ export interface InventarioItem {
   fecha_vencimiento: string;
   usuario_alta: UsuarioInfo;
   status: boolean | null;
+  observacion_rechazo: string | null;
+  fecha_modifica: string | null;
+  usuario_modifica: UsuarioInfo | null;
   ruta_evidencia: string;
   cantidad_total: number;
   numero_contenedores: number;
@@ -89,6 +92,7 @@ export interface InventarioItem {
 
 export interface InventarioFormContenedor {
   cantidad: number;
+  cantidad_disponible?: number;
   precio: number;
 }
 
