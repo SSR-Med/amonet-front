@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment } from 'react';
 import { Search, Download, ChevronDown, ChevronUp, Check, X, Pencil } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
@@ -25,6 +25,7 @@ import type { InventarioItem } from '@/types';
 export default function InventarioPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAdmin, user: currentUser } = useAuth();
   const { items: materiasPrimas, getAll: loadMateriasPrimas } = useRawMaterialStore();
 
@@ -48,15 +49,21 @@ export default function InventarioPage() {
 
   useEffect(() => {
     if (materiasPrimas.length === 0) loadMateriasPrimas();
-  }, [materiasPrimas.length, loadMateriasPrimas]);
 
-  const fetchData = async (page = currentPage, size = pageSize) => {
+    const mpId = searchParams.get('amonet_materia_prima_id');
+    if (mpId && !filtroMateriaPrima) {
+      setFiltroMateriaPrima(mpId);
+      setFiltersOpen(true);
+    }
+  }, [materiasPrimas.length, loadMateriasPrimas, searchParams]);
+
+  const fetchData = async (page = currentPage, size = pageSize, extraFilters?: Record<string, string | boolean>) => {
     setLoading(true);
     try {
-      const filters: Record<string, string | boolean> = {};
+      const filters: Record<string, string | boolean> = { ...extraFilters };
+      if (!filters.amonet_materia_prima_id && filtroMateriaPrima) filters.amonet_materia_prima_id = filtroMateriaPrima;
       if (filtroLote) filters.lote = filtroLote;
       if (filtroProveedor) filters.proveedor = filtroProveedor;
-      if (filtroMateriaPrima) filters.amonet_materia_prima_id = filtroMateriaPrima;
       if (filtroFechaInicio) filters.fecha_inicio = filtroFechaInicio;
       if (filtroFechaFin) filters.fecha_fin = filtroFechaFin;
       if (filtroStatus !== '') filters.status = filtroStatus === 'true';
@@ -73,7 +80,14 @@ export default function InventarioPage() {
   };
 
   useEffect(() => {
-    fetchData(1, pageSize);
+    const mpId = searchParams.get('amonet_materia_prima_id');
+    if (mpId) {
+      const filters: Record<string, string | boolean> = {};
+      filters.amonet_materia_prima_id = mpId;
+      fetchData(1, pageSize, filters);
+    } else {
+      fetchData(1, pageSize);
+    }
   }, []);
 
   const handleSearch = () => fetchData(1, pageSize);

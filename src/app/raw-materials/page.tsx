@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import Link from 'next/link';
+import { Archive } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useRawMaterialStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
 import { ConfirmDeleteModal } from '@/components/modals';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -89,6 +92,17 @@ export default function RawMaterialsPage() {
         <span className="font-medium text-gray-900">
           {rm.cantidad_disponible.toFixed(2)}
         </span>
+      ),
+    },
+    {
+      key: 'inventario',
+      header: '',
+      render: (rm: RawMaterial) => (
+        <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Ver inventario">
+          <Link href={`/inventario?amonet_materia_prima_id=${rm.id}`}>
+            <Archive className="h-4 w-4 text-violet-lab" />
+          </Link>
+        </Button>
       ),
     },
   ];
