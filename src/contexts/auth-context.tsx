@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import * as authApi from '@/lib/api/auth';
+import { ADMIN } from '@/lib/constants';
 
 interface User {
   id: string;
@@ -65,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         token,
         isAuthenticated: !!token,
-        isAdmin: user?.rol === 'ADMIN',
+        isAdmin: user?.rol === ADMIN,
         loading,
         login,
         logout,

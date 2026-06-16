@@ -1,6 +1,10 @@
 import { get, post, put, del } from './client';
 import type { ProductVariable, PaginatedResponse } from '@/types';
 
+export async function getProductVariableById(id: string): Promise<ProductVariable> {
+  return get<ProductVariable>(`/materias_primas/variables_globales/${id}`);
+}
+
 export async function getAllProductVariables(
   page = 1,
   pageSize = 100,

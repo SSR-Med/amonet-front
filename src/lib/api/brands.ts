@@ -1,6 +1,10 @@
 import { get, post, put, del } from './client';
 import type { Brand, PaginatedResponse } from '@/types';
 
+export async function getBrandById(id: string): Promise<Brand> {
+  return get<Brand>(`/marcas/${id}`);
+}
+
 export async function getAllBrands(
   page = 1,
   pageSize = 20,

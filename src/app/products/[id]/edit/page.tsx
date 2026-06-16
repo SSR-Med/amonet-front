@@ -1,36 +1,43 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { ProductForm } from '@/components/forms';
-import { useProductStore } from '@/stores';
+import * as productsApi from '@/lib/api/products';
+import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
+import type { Product } from '@/types';
 
 export default function EditProductPage() {
   const { isAdmin } = useAuth();
   const params = useParams();
   const router = useRouter();
-  const { getById, getAll, items, loading } = useProductStore();
-
-  useEffect(() => {
-    if (items.length === 0) getAll();
-  }, [items.length, getAll]);
+  const { toast } = useToast();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAdmin) router.push('/products');
   }, [isAdmin, router]);
 
-  if (!isAdmin) return null;
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await productsApi.getProductById(params.id as string);
+        setProduct(data);
+      } catch (err) {
+        toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
+        router.push('/products');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [params.id, router, toast]);
 
-  const product = getById(params.id as string);
-
-  if (loading && !product) return null;
-
-  if (!product) {
-    router.push('/products');
-    return null;
-  }
+  if (!isAdmin || loading) return null;
+  if (!product) return null;
 
   return (
     <>

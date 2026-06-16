@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { ADMIN } from '@/lib/constants';
 import { useUserStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -65,7 +66,7 @@ export default function UsersPage() {
       key: 'rol',
       header: 'Rol',
       render: (user: User) => (
-        <Badge variant={user.rol === 'ADMIN' ? 'chemical' : 'default'}>{user.rol}</Badge>
+        <Badge variant={user.rol === ADMIN ? 'chemical' : 'default'}>{user.rol}</Badge>
       ),
     },
     {

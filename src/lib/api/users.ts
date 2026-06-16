@@ -1,6 +1,10 @@
 import { get, post, patch, del } from './client';
 import type { User, PaginatedResponse } from '@/types';
 
+export async function getUserById(id: string): Promise<User> {
+  return get<User>(`/usuarios/${id}`);
+}
+
 export async function getAllUsers(
   page = 1,
   pageSize = 20,

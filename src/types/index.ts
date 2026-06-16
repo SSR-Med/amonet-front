@@ -74,6 +74,7 @@ export interface InventarioItem {
   id: string;
   fecha_ingreso: string;
   numero_ingreso: string;
+  amonet_materia_prima_id: string;
   materia_prima_nombre: string;
   unidad_abreviacion: string;
   proveedor: string;

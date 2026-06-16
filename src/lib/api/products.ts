@@ -1,6 +1,10 @@
 import { get, post, put, del } from './client';
 import type { Product, PaginatedResponse } from '@/types';
 
+export async function getProductById(id: string): Promise<Product> {
+  return get<Product>(`/productos/${id}`);
+}
+
 export async function getAllProducts(
   page = 1,
   pageSize = 20,

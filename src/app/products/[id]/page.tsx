@@ -1,36 +1,47 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import { useProductStore, useRawMaterialStore, useProductVariableStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { validateFormula } from '@/lib/formula-validator';
+import { useProductVariableStore } from '@/stores';
+import * as productsApi from '@/lib/api/products';
+import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
+import type { Product } from '@/types';
 
 export default function ProductDetailPage() {
   const { isAdmin } = useAuth();
   const params = useParams();
   const router = useRouter();
-  const { getById, getAll, items, loading } = useProductStore();
-  const { getById: getMaterialById, getAll: getAllMaterials, items: allMaterials } = useRawMaterialStore();
+  const { toast } = useToast();
   const { items: variables, getAll: getAllVariables } = useProductVariableStore();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (items.length === 0) getAll();
-    if (allMaterials.length === 0) getAllMaterials();
     if (variables.length === 0) getAllVariables();
-  }, [items.length, allMaterials.length, variables.length, getAll, getAllMaterials, getAllVariables]);
+  }, [variables.length, getAllVariables]);
 
-  const product = getById(params.id as string);
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await productsApi.getProductById(params.id as string);
+        setProduct(data);
+      } catch (err) {
+        toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
+        router.push('/products');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [params.id, router, toast]);
 
-  if (loading && !product) return null;
-
-  if (!product) {
-    router.push('/products');
-    return null;
-  }
+  if (loading) return null;
+  if (!product) return null;
 
   return (
     <div className="px-6 py-4">
@@ -73,7 +84,6 @@ export default function ProductDetailPage() {
           <h3 className="text-sm font-medium text-gray-900 mb-3">Materias Primas</h3>
           <div className="space-y-3">
             {product.materias_primas.map((pm, index) => {
-              const material = getMaterialById(pm.id) || allMaterials.find((m) => m.id === pm.id);
               const validation = validateFormula(pm.formula, variables.map((v) => v.nombre));
 
               return (
@@ -82,11 +92,6 @@ export default function ProductDetailPage() {
                     <span className="w-2 h-2 rounded-full bg-violet-lab" />
                     <div>
                       <p className="text-sm font-medium text-gray-900">{pm.nombre}</p>
-                      {material && (
-                        <p className="text-xs text-gris-tecnico">
-                          {material.tipo_materia_prima.nombre} · {material.tipo_unidad.abreviacion}
-                        </p>
-                      )}
                     </div>
                   </div>
                   <div className="text-right">

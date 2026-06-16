@@ -1,30 +1,37 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout';
 import { UserForm } from '@/components/forms/user-form';
-import { useUserStore } from '@/stores';
+import * as usersApi from '@/lib/api/users';
+import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
+import type { User } from '@/types';
 
 export default function EditUserPage() {
   const params = useParams();
   const router = useRouter();
-  const { items: users, getAll, loading } = useUserStore();
+  const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (users.length === 0) {
-      getAll();
-    }
-  }, [users.length, getAll]);
+    (async () => {
+      try {
+        const data = await usersApi.getUserById(params.id as string);
+        setUser(data);
+      } catch (err) {
+        toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
+        router.push('/users');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [params.id, router, toast]);
 
-  const user = users.find((u) => u.id === params.id);
-
-  if (loading && !user) return null;
-
-  if (!user) {
-    router.push('/users');
-    return null;
-  }
+  if (loading) return null;
+  if (!user) return null;
 
   return (
     <>

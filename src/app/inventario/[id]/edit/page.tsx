@@ -39,18 +39,12 @@ export default function EditInventarioPage() {
   useEffect(() => {
     const fetchInventario = async () => {
       try {
-        const res = await inventarioApi.getAllInventario(1, 1000);
-        const item = res.items.find((i) => i.id === params.id);
-        if (!item) {
-          toast({ title: 'Error', description: 'Inventario no encontrado', variant: 'error' });
-          router.push('/inventario');
-          return;
-        }
+        const item = await inventarioApi.getInventarioById(params.id as string);
         setInventario(item);
         setFechaIngreso(item.fecha_ingreso.split('T')[0]);
         setProveedor(item.proveedor);
         setLote(item.lote);
-        setAmonetMateriaPrimaId(item.materia_prima_nombre);
+        setAmonetMateriaPrimaId(item.amonet_materia_prima_id);
         setFechaVencimiento(item.fecha_vencimiento.split('T')[0]);
         setContenedores(
           item.contenedores.map((c) => ({
@@ -73,8 +67,16 @@ export default function EditInventarioPage() {
     setContenedores((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: Math.max(0, value) } : c)));
   };
 
+  const addContenedor = () => {
+    setContenedores((prev) => [...prev, { cantidad: 0, cantidad_disponible: 0, precio: 0 }]);
+  };
+
+  const removeContenedor = (index: number) => {
+    setContenedores((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
-    if (!proveedor || !lote || !fechaVencimiento) {
+    if (!proveedor || !lote || !fechaVencimiento || !amonetMateriaPrimaId) {
       toast({ title: 'Error', description: 'Completa todos los campos requeridos', variant: 'error' });
       return;
     }
@@ -82,6 +84,8 @@ export default function EditInventarioPage() {
     setSubmitting(true);
     try {
       const payload: Record<string, unknown> = {
+        fecha_ingreso: fechaIngreso,
+        amonet_materia_prima_id: amonetMateriaPrimaId,
         proveedor,
         lote,
         fecha_vencimiento: fechaVencimiento,
@@ -108,7 +112,6 @@ export default function EditInventarioPage() {
   };
 
   if (loading) return null;
-
   if (!inventario) return null;
 
   return (
@@ -119,11 +122,20 @@ export default function EditInventarioPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gris-tecnico mb-1">Fecha de ingreso</label>
-              <Input type="date" value={fechaIngreso} disabled />
+              <Input type="date" value={fechaIngreso} onChange={(e) => setFechaIngreso(e.target.value)} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gris-tecnico mb-1">Materia prima</label>
-              <Input value={inventario.materia_prima_nombre} disabled />
+              <select
+                className="flex h-10 w-full rounded-8 border border-input bg-white px-3 py-2 text-sm"
+                value={amonetMateriaPrimaId}
+                onChange={(e) => setAmonetMateriaPrimaId(e.target.value)}
+              >
+                <option value="">Seleccionar</option>
+                {materiasPrimas.map((mp) => (
+                  <option key={mp.id} value={mp.id}>{mp.nombre}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gris-tecnico mb-1">Proveedor</label>
@@ -142,17 +154,27 @@ export default function EditInventarioPage() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs font-medium text-gris-tecnico">Contenedores</span>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addContenedor}>
+                <Plus className="h-3 w-3 mr-1" /> Agregar
+              </Button>
             </div>
             <div className="flex items-center gap-3 text-xs font-medium text-gris-tecnico mb-1">
               <span className="w-6" />
               <span className="w-24">Cant. original</span>
               <span className="w-24">Cant. disponible</span>
               <span className="w-24">Precio</span>
+              <span className="w-8" />
             </div>
             {contenedores.map((c, idx) => (
               <div key={idx} className="flex items-center gap-3 mt-2">
                 <span className="text-xs text-gris-tecnico w-6">{idx + 1}.</span>
-                <Input type="number" value={c.cantidad} disabled className="w-24" />
+                <Input
+                  type="number"
+                  min={0}
+                  value={c.cantidad}
+                  onChange={(e) => updateContenedor(idx, 'cantidad', Number(e.target.value))}
+                  className="w-24"
+                />
                 <Input
                   type="number"
                   min={0}
@@ -160,9 +182,21 @@ export default function EditInventarioPage() {
                   onChange={(e) => updateContenedor(idx, 'cantidad_disponible', Number(e.target.value))}
                   className="w-24"
                 />
-                <Input type="number" value={c.precio} disabled className="w-24" />
+                <Input
+                  type="number"
+                  min={0}
+                  value={c.precio}
+                  onChange={(e) => updateContenedor(idx, 'precio', Number(e.target.value))}
+                  className="w-24"
+                />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeContenedor(idx)}>
+                  <Trash2 className="h-3 w-3 text-coral-alerta" />
+                </Button>
               </div>
             ))}
+            {contenedores.length === 0 && (
+              <p className="text-xs text-gris-tecnico mt-1">Agrega al menos un contenedor</p>
+            )}
           </div>
         </div>
 

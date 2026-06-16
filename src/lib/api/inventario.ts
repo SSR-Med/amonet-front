@@ -1,5 +1,5 @@
 import { get, patch } from './client';
-import type { InventarioFormItem, InventarioItem, PaginatedResponse } from '@/types';
+import type { InventarioFormItem, InventarioItem, PaginatedResponse, UsuarioInfo } from '@/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -17,6 +17,10 @@ export async function getAllInventario(
   if (filters?.proveedor) params.set('proveedor', filters.proveedor);
   if (filters?.usuario_alta) params.set('usuario_alta', filters.usuario_alta);
   return get<PaginatedResponse<InventarioItem>>(`/inventario/?${params}`);
+}
+
+export async function getInventarioById(id: string): Promise<InventarioItem> {
+  return get<InventarioItem>(`/inventario/${id}`);
 }
 
 export async function downloadEvidencia(numeroIngreso: string): Promise<string> {

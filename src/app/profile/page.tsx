@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ADMIN } from '@/lib/constants';
 import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +27,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <p className="text-sm text-gris-tecnico">Rol</p>
-            <Badge variant={user.rol === 'ADMIN' ? 'chemical' : 'default'}>{user.rol}</Badge>
+            <Badge variant={user.rol === ADMIN ? 'chemical' : 'default'}>{user.rol}</Badge>
           </div>
         </Card>
       </div>

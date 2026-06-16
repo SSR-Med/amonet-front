@@ -1,38 +1,43 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { RawMaterialForm } from '@/components/forms';
-import { useRawMaterialStore } from '@/stores';
+import * as rawMaterialsApi from '@/lib/api/raw-materials';
+import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
+import type { RawMaterial } from '@/types';
 
 export default function EditRawMaterialPage() {
   const { isAdmin } = useAuth();
   const params = useParams();
   const router = useRouter();
-  const { getById, getAll, items, loading } = useRawMaterialStore();
-
-  useEffect(() => {
-    if (items.length === 0) {
-      getAll();
-    }
-  }, [items.length, getAll]);
+  const { toast } = useToast();
+  const [rawMaterial, setRawMaterial] = useState<RawMaterial | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAdmin) router.push('/raw-materials');
   }, [isAdmin, router]);
 
-  if (!isAdmin) return null;
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await rawMaterialsApi.getRawMaterialById(params.id as string);
+        setRawMaterial(data);
+      } catch (err) {
+        toast({ title: 'Error', description: getApiErrorMessage(err, 'Error al cargar materia prima'), variant: 'error' });
+        router.push('/raw-materials');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [params.id, router, toast]);
 
-  const rawMaterial = getById(params.id as string);
-
-  if (loading && !rawMaterial) return null;
-
-  if (!rawMaterial) {
-    router.push('/raw-materials');
-    return null;
-  }
+  if (!isAdmin || loading) return null;
+  if (!rawMaterial) return null;
 
   return (
     <>

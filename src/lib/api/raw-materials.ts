@@ -1,6 +1,10 @@
 import { get, post, put, del } from './client';
 import type { RawMaterial, PaginatedResponse } from '@/types';
 
+export async function getRawMaterialById(id: string): Promise<RawMaterial> {
+  return get<RawMaterial>(`/materias_primas/${id}`);
+}
+
 export async function getAllRawMaterials(
   page = 1,
   pageSize = 20,

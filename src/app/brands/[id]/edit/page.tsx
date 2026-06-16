@@ -1,38 +1,43 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { BrandForm } from '@/components/forms';
-import { useBrandStore } from '@/stores';
+import * as brandsApi from '@/lib/api/brands';
+import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
+import type { Brand } from '@/types';
 
 export default function EditBrandPage() {
   const { isAdmin } = useAuth();
   const params = useParams();
   const router = useRouter();
-  const { getById, getAll, items: brands, loading } = useBrandStore();
-
-  useEffect(() => {
-    if (brands.length === 0) {
-      getAll();
-    }
-  }, [brands.length, getAll]);
+  const { toast } = useToast();
+  const [brand, setBrand] = useState<Brand | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAdmin) router.push('/brands');
   }, [isAdmin, router]);
 
-  if (!isAdmin) return null;
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await brandsApi.getBrandById(params.id as string);
+        setBrand(data);
+      } catch (err) {
+        toast({ title: 'Error', description: getApiErrorMessage(err, 'Error al cargar marca'), variant: 'error' });
+        router.push('/brands');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [params.id, router, toast]);
 
-  const brand = getById(params.id as string);
-
-  if (loading && !brand) return null;
-
-  if (!brand) {
-    router.push('/brands');
-    return null;
-  }
+  if (!isAdmin || loading) return null;
+  if (!brand) return null;
 
   return (
     <>

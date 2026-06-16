@@ -1,38 +1,43 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { ProductVariableForm } from '@/components/forms';
-import { useProductVariableStore } from '@/stores';
+import * as productVariablesApi from '@/lib/api/product-variables';
+import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/utils';
+import type { ProductVariable } from '@/types';
 
 export default function EditProductVariablePage() {
   const { isAdmin } = useAuth();
   const params = useParams();
   const router = useRouter();
-  const { getById, getAll, items, loading } = useProductVariableStore();
-
-  useEffect(() => {
-    if (items.length === 0) {
-      getAll();
-    }
-  }, [items.length, getAll]);
+  const { toast } = useToast();
+  const [variable, setVariable] = useState<ProductVariable | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAdmin) router.push('/product-variables');
   }, [isAdmin, router]);
 
-  if (!isAdmin) return null;
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await productVariablesApi.getProductVariableById(params.id as string);
+        setVariable(data);
+      } catch (err) {
+        toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
+        router.push('/product-variables');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [params.id, router, toast]);
 
-  const variable = getById(params.id as string);
-
-  if (loading && !variable) return null;
-
-  if (!variable) {
-    router.push('/product-variables');
-    return null;
-  }
+  if (!isAdmin || loading) return null;
+  if (!variable) return null;
 
   return (
     <>
