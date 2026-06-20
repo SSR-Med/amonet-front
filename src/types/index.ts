@@ -63,6 +63,7 @@ export interface UsuarioInfo {
 }
 
 export interface ContenedorItem {
+  id: string;
   contador: number;
   cantidad: number;
   cantidad_disponible: number;
@@ -110,4 +111,21 @@ export interface PaginatedResponse<T> {
   current_page: number;
   total_items: number;
   page_size: number;
+}
+
+export interface EstadoProduccion {
+  id: string;
+  nombre: string;
+}
+
+export interface CreateOrdenProduccionPayload {
+  descripcion: string;
+  amonet_producto_id: string;
+  variables_globales: { amonet_variable_materia_prima_id: string; cantidad: number }[];
+  materias_primas: {
+    amonet_materia_prima_id: string;
+    cantidad: number;
+    contenedores: { amonet_inventario_materia_prima_contenedor_id: string; cantidad: number }[];
+  }[];
+  observaciones?: string;
 }

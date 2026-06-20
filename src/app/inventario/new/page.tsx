@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2 } from 'lucide-react';
 import { useRawMaterialStore } from '@/stores';
@@ -154,36 +154,44 @@ export default function NewInventarioPage() {
                   <Plus className="h-3 w-3 mr-1" /> Agregar
                 </Button>
               </div>
-              <div className="flex items-center gap-2 mt-2 text-xs font-medium text-gris-tecnico">
-                <span className="w-6" />
-                <span className="w-28">Cantidad</span>
-                <span className="w-28">Precio ($)</span>
-                <span className="w-8" />
-              </div>
-              {item.contenedores.map((cont, idx) => (
-                <div key={idx} className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-gris-tecnico w-6">{idx + 1}.</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={cont.cantidad}
-                    onChange={(e) => updateContenedorField(item.id, idx, 'cantidad', Number(e.target.value))}
-                    className="w-28"
-                    placeholder="Cant."
-                  />
-                  <Input
-                    type="number"
-                    min={0}
-                    value={cont.precio}
-                    onChange={(e) => updateContenedorField(item.id, idx, 'precio', Number(e.target.value))}
-                    className="w-28"
-                    placeholder="Precio"
-                  />
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeContenedor(item.id, idx)}>
-                    <Trash2 className="h-3 w-3 text-coral-alerta" />
-                  </Button>
-                </div>
-              ))}
+              {(() => {
+                const mp = materiasPrimas.find((m) => m.id === item.amonet_materia_prima_id);
+                const unidad = mp?.tipo_unidad?.abreviacion || '';
+                return (
+                  <>
+                    <div className="flex items-center gap-2 mt-2 text-xs font-medium text-gris-tecnico">
+                      <span className="w-6" />
+                      <span className="w-28">Cantidad {unidad && `(${unidad})`}</span>
+                      <span className="w-28">Precio ($)</span>
+                      <span className="w-8" />
+                    </div>
+                    {item.contenedores.map((cont, idx) => (
+                      <div key={idx} className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-gris-tecnico w-6">{idx + 1}.</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={cont.cantidad}
+                          onChange={(e) => updateContenedorField(item.id, idx, 'cantidad', Number(e.target.value))}
+                          className="w-28"
+                          placeholder="Cant."
+                        />
+                        <Input
+                          type="number"
+                          min={0}
+                          value={cont.precio}
+                          onChange={(e) => updateContenedorField(item.id, idx, 'precio', Number(e.target.value))}
+                          className="w-28"
+                          placeholder="Precio"
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeContenedor(item.id, idx)}>
+                          <Trash2 className="h-3 w-3 text-coral-alerta" />
+                        </Button>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
               {item.contenedores.length === 0 && (
                 <p className="text-xs text-gris-tecnico mt-1">Agrega al menos un contenedor</p>
               )}

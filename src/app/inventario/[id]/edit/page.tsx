@@ -160,9 +160,9 @@ export default function EditInventarioPage() {
             </div>
             <div className="flex items-center gap-3 text-xs font-medium text-gris-tecnico mb-1">
               <span className="w-6" />
-              <span className="w-24">Cant. original</span>
-              <span className="w-24">Cant. disponible</span>
-              <span className="w-24">Precio</span>
+              <span className="w-24">Cant. original {inventario.unidad_abreviacion && `(${inventario.unidad_abreviacion})`}</span>
+              <span className="w-24">Cant. disponible {inventario.unidad_abreviacion && `(${inventario.unidad_abreviacion})`}</span>
+              <span className="w-24">Precio ($)</span>
               <span className="w-8" />
             </div>
             {contenedores.map((c, idx) => (

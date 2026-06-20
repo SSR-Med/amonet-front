@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Tag, FlaskConical, Variable, LayoutDashboard, Users, UserCircle, LogOut, FileText, Archive } from 'lucide-react';
+import { Package, Tag, FlaskConical, Variable, LayoutDashboard, Users, UserCircle, LogOut, FileText, Archive, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 
@@ -13,6 +13,7 @@ const modules = [
   { name: 'Variables Globales', href: '/product-variables', icon: Variable, adminOnly: false },
   { name: 'Usuarios', href: '/users', icon: Users, adminOnly: true },
   { name: 'Inventario', href: '/inventario', icon: Archive, adminOnly: false },
+  { name: 'Órdenes Prod.', href: '/ordenes-produccion', icon: ClipboardList, adminOnly: true },
   { name: 'Logs', href: '/logs', icon: FileText, adminOnly: true },
 ];
 
