@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment } from 'react';
-import { Search, Download, ChevronDown, ChevronUp, Check, X, Pencil } from 'lucide-react';
+import { Download, Check, X, Pencil } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { FilterContainer } from '@/components/ui/filter-container';
+import { PaginationBar } from '@/components/ui/pagination-bar';
 import {
   Dialog,
   DialogContent,
@@ -145,64 +147,48 @@ export default function InventarioPage() {
     <>
       <PageHeader title="Inventario" description="Gestión de inventario de materias primas" createHref="/inventario/new" createLabel="Nuevo ingreso" />
       <div className="px-6">
-        <button
-          className="flex items-center gap-2 text-sm text-gris-tecnico mb-3 hover:text-gray-900"
-          onClick={() => setFiltersOpen(!filtersOpen)}
+        <FilterContainer
+          open={filtersOpen}
+          onToggle={() => setFiltersOpen(!filtersOpen)}
+          onSearch={handleSearch}
+          loading={loading}
         >
-          {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          Filtros de búsqueda
-        </button>
-
-        {filtersOpen && (
-          <div className="mb-4 p-4 rounded-8 border border-border-tabla bg-white space-y-3">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gris-tecnico mb-1">Proveedor</label>
-                <Input value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)} placeholder="Proveedor" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gris-tecnico mb-1">Lote</label>
-                <Input value={filtroLote} onChange={(e) => setFiltroLote(e.target.value)} placeholder="N° lote" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gris-tecnico mb-1">Materia prima</label>
-                <select className="flex h-10 w-full rounded-8 border border-input bg-white px-3 py-2 text-sm" value={filtroMateriaPrima} onChange={(e) => setFiltroMateriaPrima(e.target.value)}>
-                  <option value="">Todas</option>
-                  {materiasPrimas.map((mp) => (
-                    <option key={mp.id} value={mp.id}>{mp.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gris-tecnico mb-1">Status</label>
-                <select className="flex h-10 w-full rounded-8 border border-input bg-white px-3 py-2 text-sm" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
-                  <option value="">Todos</option>
-                  <option value="true">Aprobado</option>
-                  <option value="false">Rechazado</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gris-tecnico mb-1">Fecha inicio</label>
-                <Input type="date" value={filtroFechaInicio} onChange={(e) => setFiltroFechaInicio(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gris-tecnico mb-1">Fecha fin</label>
-                <Input type="date" value={filtroFechaFin} onChange={(e) => setFiltroFechaFin(e.target.value)} />
-              </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gris-tecnico mb-1">Proveedor</label>
+              <Input value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)} placeholder="Proveedor" />
             </div>
-            <Button onClick={handleSearch} disabled={loading}>
-              <Search className="mr-2 h-4 w-4" /> Buscar
-            </Button>
+            <div>
+              <label className="block text-xs font-medium text-gris-tecnico mb-1">Lote</label>
+              <Input value={filtroLote} onChange={(e) => setFiltroLote(e.target.value)} placeholder="N° lote" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gris-tecnico mb-1">Materia prima</label>
+              <select className="flex h-10 w-full rounded-8 border border-input bg-white px-3 py-2 text-sm" value={filtroMateriaPrima} onChange={(e) => setFiltroMateriaPrima(e.target.value)}>
+                <option value="">Todas</option>
+                {materiasPrimas.map((mp) => (
+                  <option key={mp.id} value={mp.id}>{mp.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gris-tecnico mb-1">Status</label>
+              <select className="flex h-10 w-full rounded-8 border border-input bg-white px-3 py-2 text-sm" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
+                <option value="">Todos</option>
+                <option value="true">Aprobado</option>
+                <option value="false">Rechazado</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gris-tecnico mb-1">Fecha inicio</label>
+              <Input type="date" value={filtroFechaInicio} onChange={(e) => setFiltroFechaInicio(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gris-tecnico mb-1">Fecha fin</label>
+              <Input type="date" value={filtroFechaFin} onChange={(e) => setFiltroFechaFin(e.target.value)} />
+            </div>
           </div>
-        )}
-
-        {!filtersOpen && (
-          <div className="mb-4 flex items-center gap-2">
-            <Button size="sm" variant="secondary" onClick={handleSearch} disabled={loading}>
-              <Search className="mr-1 h-3 w-3" /> Buscar
-            </Button>
-          </div>
-        )}
+        </FilterContainer>
 
         {loading && <p className="text-sm text-gris-tecnico py-8 text-center">Cargando...</p>}
 
@@ -341,23 +327,13 @@ export default function InventarioPage() {
               </table>
             </div>
 
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border-tabla">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gris-tecnico">Registros por página</span>
-                <select className="text-sm border border-border-tabla rounded-8 px-2 py-1 bg-white" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); fetchData(1, Number(e.target.value)); }}>
-                  {[10, 20, 50, 100].map((s) => (<option key={s} value={s}>{s}</option>))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gris-tecnico mr-2">Página {currentPage} de {totalPages} ({totalItems} registros)</span>
-                {totalPages > 1 && (
-                  <>
-                    <Button variant="secondary" size="sm" disabled={currentPage <= 1} onClick={() => fetchData(currentPage - 1)}>Anterior</Button>
-                    <Button variant="secondary" size="sm" disabled={currentPage >= totalPages} onClick={() => fetchData(currentPage + 1)}>Siguiente</Button>
-                  </>
-                )}
-              </div>
-            </div>
+            <PaginationBar
+              currentPage={currentPage}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={(p) => fetchData(p, pageSize)}
+              onPageSizeChange={(s) => { setPageSize(s); fetchData(1, s); }}
+            />
           </div>
         )}
       </div>

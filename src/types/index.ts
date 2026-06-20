@@ -118,6 +118,49 @@ export interface EstadoProduccion {
   nombre: string;
 }
 
+export interface OrdenProduccionContenedor {
+  id: string;
+  cantidad: number;
+  coste: number;
+  lote: string;
+  proveedor: string;
+}
+
+export interface OrdenProduccionMateriaPrima {
+  id: string;
+  nombre: string;
+  contenedores: OrdenProduccionContenedor[];
+}
+
+export interface OrdenProduccionVariableGlobal {
+  id: string;
+  nombre: string;
+  cantidad: number;
+}
+
+export interface OrdenProduccionDetail {
+  id: string;
+  descripcion: string;
+  observacion_creacion: string | null;
+  fecha_alta: string;
+  fecha_modifica: string | null;
+  coste: number;
+  producto: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    marca_nombre: string;
+  };
+  estado_produccion: {
+    id: string;
+    nombre: string;
+  };
+  usuario_alta: UsuarioInfo;
+  usuario_modifica: UsuarioInfo | null;
+  variables_globales: OrdenProduccionVariableGlobal[];
+  materias_primas: OrdenProduccionMateriaPrima[];
+}
+
 export interface CreateOrdenProduccionPayload {
   descripcion: string;
   amonet_producto_id: string;
