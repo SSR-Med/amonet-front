@@ -587,10 +587,13 @@ export default function NewOrdenProduccionPage() {
                   <Plus className="mr-1 h-4 w-4" /> Agregar materia prima
                 </Button>
                 <div className="mt-4">
-                  <Label>Notas / Justificación</Label>
+                  <Label className="after:content-['*'] after:ml-0.5 after:text-coral-alerta">
+                    Notas / Justificación
+                  </Label>
                   <textarea
+                    required
                     className="mt-1 min-h-[80px] w-full resize-y rounded-lg border border-border-tabla bg-white p-3 text-sm outline-none focus:border-2 focus:border-violet-lab"
-                    placeholder="Explica por qué utilizas estas materias primas..."
+                    placeholder="Justificación obligatoria..."
                     value={freeEditNotes}
                     onChange={e => setFreeEditNotes(e.target.value)}
                   />
@@ -605,7 +608,7 @@ export default function NewOrdenProduccionPage() {
               <Button
                 disabled={
                   isFreeMode
-                    ? !freeEditMaterials.some(m => m.materia_prima_id && m.cantidad > 0)
+                    ? !freeEditMaterials.some(m => m.materia_prima_id && m.cantidad > 0) || !freeEditNotes.trim()
                     : calculatedMaterials.length === 0
                 }
                 onClick={() => setStep(3)}
@@ -695,10 +698,13 @@ export default function NewOrdenProduccionPage() {
             </Card>
 
             <div className="mb-4">
-              <Label>Observaciones</Label>
+              <Label className="after:content-['*'] after:ml-0.5 after:text-coral-alerta">
+                Observaciones
+              </Label>
               <textarea
+                required
                 className="mt-1 min-h-[80px] w-full resize-y rounded-lg border border-border-tabla bg-white p-3 text-sm outline-none focus:border-2 focus:border-violet-lab"
-                placeholder="Observaciones adicionales..."
+                placeholder="Observaciones obligatorias..."
                 value={observaciones}
                 onChange={e => setObservaciones(e.target.value)}
               />
@@ -708,7 +714,7 @@ export default function NewOrdenProduccionPage() {
               <Button variant="secondary" onClick={() => setStep(2)}>
                 <ChevronLeft className="mr-1 h-4 w-4" /> Anterior
               </Button>
-              <Button onClick={handleGoToStep4} disabled={loadingContainers}>
+              <Button onClick={handleGoToStep4} disabled={loadingContainers || !observaciones.trim()}>
                 {loadingContainers ? 'Cargando...' : 'Continuar a Contenedores'}
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>

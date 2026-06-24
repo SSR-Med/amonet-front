@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
-import { Archive } from 'lucide-react';
+import { Archive, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useRawMaterialStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
@@ -98,11 +98,18 @@ export default function RawMaterialsPage() {
       key: 'inventario',
       header: '',
       render: (rm: RawMaterial) => (
-        <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Ver inventario">
-          <Link href={`/inventario?amonet_materia_prima_id=${rm.id}`}>
-            <Archive className="h-4 w-4 text-violet-lab" />
-          </Link>
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Ver inventario">
+            <Link href={`/inventario?amonet_materia_prima_id=${rm.id}`}>
+              <Archive className="h-4 w-4 text-violet-lab" />
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Ver órdenes de producción">
+            <Link href={`/ordenes-produccion?amonet_materia_prima_id=${rm.id}`}>
+              <ClipboardList className="h-4 w-4 text-violet-lab" />
+            </Link>
+          </Button>
+        </div>
       ),
     },
   ];

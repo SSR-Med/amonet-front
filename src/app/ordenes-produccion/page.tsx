@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, Calendar, Package, FlaskConical } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
@@ -21,15 +21,17 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/utils';
-import { useProductStore } from '@/stores';
+import { useProductStore, useRawMaterialStore } from '@/stores';
 import * as api from '@/lib/api/ordenes-produccion';
 import type { OrdenProduccionDetail, EstadoProduccion } from '@/types';
 
 export default function OrdenesProduccionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { isAdmin } = useAuth();
   const { getAll: getAllProducts, items: products } = useProductStore();
+  const { getAll: getAllMaterials, items: rawMaterials } = useRawMaterialStore();
 
   const [items, setItems] = useState<OrdenProduccionDetail[]>([]);
   const [page, setPage] = useState(1);
@@ -42,12 +44,19 @@ export default function OrdenesProduccionPage() {
   const [fechaMax, setFechaMax] = useState('');
   const [productoId, setProductoId] = useState('');
   const [estadoId, setEstadoId] = useState('');
+  const initialMpId = searchParams.get('amonet_materia_prima_id') || '';
+  const [materiaPrimaId, setMateriaPrimaId] = useState(initialMpId);
   const [estados, setEstados] = useState<EstadoProduccion[]>([]);
 
   useEffect(() => {
     getAllProducts(1, 100);
+    getAllMaterials(1, 100);
     api.getEstadosProduccion().then(setEstados).catch(() => {});
-  }, [getAllProducts]);
+  }, [getAllProducts, getAllMaterials]);
+
+  useEffect(() => {
+    if (initialMpId) setFiltersOpen(true);
+  }, [initialMpId]);
 
   const buildFilters = useCallback(() => {
     const filters: Record<string, string> = {};
@@ -55,8 +64,9 @@ export default function OrdenesProduccionPage() {
     if (fechaMax) filters.fecha_max = fechaMax;
     if (productoId) filters.amonet_producto_id = productoId;
     if (estadoId) filters.amonet_estado_produccion_id = estadoId;
+    if (materiaPrimaId) filters.amonet_materia_prima_id = materiaPrimaId;
     return filters;
-  }, [fechaMin, fechaMax, productoId, estadoId]);
+  }, [fechaMin, fechaMax, productoId, estadoId, materiaPrimaId]);
 
   const fetch = useCallback(async (p: number, ps?: number) => {
     setLoading(true);
@@ -74,7 +84,7 @@ export default function OrdenesProduccionPage() {
 
   useEffect(() => {
     fetch(1);
-  }, []);
+  }, [fetch]);
 
   return (
     <>
@@ -123,6 +133,19 @@ export default function OrdenesProduccionPage() {
                 <SelectContent>
                   {estados.map(e => (
                     <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gris-tecnico mb-1">Materia Prima</label>
+              <Select value={materiaPrimaId} onValueChange={setMateriaPrimaId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rawMaterials.map(rm => (
+                    <SelectItem key={rm.id} value={rm.id}>{rm.nombre}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

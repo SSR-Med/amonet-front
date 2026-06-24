@@ -21,6 +21,7 @@ export async function getAllOrdenesProduccion(
     fecha_max?: string;
     amonet_producto_id?: string;
     amonet_estado_produccion_id?: string;
+    amonet_materia_prima_id?: string;
   },
 ): Promise<PaginatedResponse<OrdenProduccionDetail>> {
   const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
@@ -28,5 +29,6 @@ export async function getAllOrdenesProduccion(
   if (filters?.fecha_max) params.set('fecha_max', filters.fecha_max);
   if (filters?.amonet_producto_id) params.set('amonet_producto_id', filters.amonet_producto_id);
   if (filters?.amonet_estado_produccion_id) params.set('amonet_estado_produccion_id', filters.amonet_estado_produccion_id);
+  if (filters?.amonet_materia_prima_id) params.set('amonet_materia_prima_id', filters.amonet_materia_prima_id);
   return get<PaginatedResponse<OrdenProduccionDetail>>(`/ordenes_produccion/?${params}`);
 }
