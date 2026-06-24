@@ -145,6 +145,7 @@ export interface OrdenProduccionDetail {
   fecha_alta: string;
   fecha_modifica: string | null;
   coste: number;
+  cancel_razon_descripcion: string | null;
   producto: {
     id: string;
     codigo: string;

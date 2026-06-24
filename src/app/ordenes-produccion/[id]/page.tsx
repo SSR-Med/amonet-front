@@ -2,29 +2,50 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, Calendar, User, Package, FlaskConical, DollarSign, Hash } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Package, FlaskConical, DollarSign, Hash, Check, X } from 'lucide-react';
+import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/utils';
+import { ADMIN, JEFE_PRODUCCION } from '@/lib/constants';
 import * as api from '@/lib/api/ordenes-produccion';
-import type { OrdenProduccionDetail } from '@/types';
+import type { OrdenProduccionDetail, EstadoProduccion } from '@/types';
 
 export default function OrdenProduccionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const { user, isAdmin } = useAuth();
   const [orden, setOrden] = useState<OrdenProduccionDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [estados, setEstados] = useState<EstadoProduccion[]>([]);
+
+  const [finishDialogOpen, setFinishDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const data = await api.getOrdenProduccionById(params.id as string);
+        const [data, estadosData] = await Promise.all([
+          api.getOrdenProduccionById(params.id as string),
+          api.getEstadosProduccion(),
+        ]);
         setOrden(data);
+        setEstados(estadosData);
       } catch (err) {
         toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
         router.push('/ordenes-produccion');
@@ -34,13 +55,54 @@ export default function OrdenProduccionDetailPage() {
     })();
   }, [params.id, router, toast]);
 
+  const isTerminal = orden?.estado_produccion.nombre === 'FINISHED' || orden?.estado_produccion.nombre === 'CANCELLED';
+  const canAct = isAdmin || (user?.rol === JEFE_PRODUCCION && !isTerminal);
+
+  const handleFinish = async () => {
+    const estado = estados.find(e => e.nombre === 'FINISHED');
+    if (!estado) return;
+    setUpdating(true);
+    try {
+      await api.updateOrdenProduccionEstado(params.id as string, { amonet_estado_produccion_id: estado.id });
+      toast({ title: 'Orden finalizada', variant: 'success' });
+      setFinishDialogOpen(false);
+      const data = await api.getOrdenProduccionById(params.id as string);
+      setOrden(data);
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    const estado = estados.find(e => e.nombre === 'CANCELLED');
+    if (!estado || !cancelReason.trim()) return;
+    setUpdating(true);
+    try {
+      await api.updateOrdenProduccionEstado(params.id as string, {
+        amonet_estado_produccion_id: estado.id,
+        cancel_razon_descripcion: cancelReason,
+      });
+      toast({ title: 'Orden cancelada', variant: 'success' });
+      setCancelDialogOpen(false);
+      setCancelReason('');
+      const data = await api.getOrdenProduccionById(params.id as string);
+      setOrden(data);
+    } catch (err) {
+      toast({ title: 'Error', description: getApiErrorMessage(err), variant: 'error' });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) return null;
   if (!orden) return null;
 
   return (
     <>
       <PageHeader
-        title={`Orden de Producción`}
+        title="Orden de Producción"
         description={orden.descripcion}
       />
       <div className="px-6 py-4 space-y-6">
@@ -48,14 +110,26 @@ export default function OrdenProduccionDetailPage() {
           <Button variant="ghost" onClick={() => router.push('/ordenes-produccion')}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Volver
           </Button>
-          <Badge variant="default">{orden.estado_produccion.nombre}</Badge>
+          <div className="flex items-center gap-2">
+            {canAct && (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setCancelDialogOpen(true)}>
+                  <X className="mr-1 h-4 w-4" /> Cancelar
+                </Button>
+                <Button size="sm" onClick={() => setFinishDialogOpen(true)}>
+                  <Check className="mr-1 h-4 w-4" /> Finalizar
+                </Button>
+              </>
+            )}
+            <Badge variant="default">{orden.estado_produccion.nombre}</Badge>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
-                <Package className="h-4 w-4" /> Producto
+                <Package className="h-4 w-4" /> General
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
@@ -70,6 +144,10 @@ export default function OrdenProduccionDetailPage() {
               <div className="flex justify-between">
                 <span className="text-gris-tecnico">Marca</span>
                 <span className="font-medium">{orden.producto.marca_nombre}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gris-tecnico">Estado</span>
+                <span className="font-medium">{orden.estado_produccion.nombre}</span>
               </div>
             </CardContent>
           </Card>
@@ -128,6 +206,19 @@ export default function OrdenProduccionDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        {orden.cancel_razon_descripcion && (
+          <Card className="border-coral-alerta/30">
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2 text-coral-alerta">
+                <X className="h-4 w-4" /> Cancelación
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-700">{orden.cancel_razon_descripcion}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {orden.variables_globales.length > 0 && (
           <Card>
@@ -194,6 +285,57 @@ export default function OrdenProduccionDetailPage() {
           </Card>
         )}
       </div>
+
+      <Dialog open={finishDialogOpen} onOpenChange={setFinishDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Finalizar orden</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de finalizar esta orden de producción?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="secondary" onClick={() => setFinishDialogOpen(false)} disabled={updating}>
+              Cancelar
+            </Button>
+            <Button onClick={handleFinish} disabled={updating}>
+              {updating ? 'Finalizando...' : 'Finalizar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancelar orden</DialogTitle>
+            <DialogDescription>
+              Ingresa el motivo de cancelación. Esta acción restaurará las cantidades a los contenedores originales.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Label className="after:content-['*'] after:ml-0.5 after:text-coral-alerta">Motivo de cancelación</Label>
+            <textarea
+              className="mt-1 min-h-[80px] w-full resize-y rounded-lg border border-border-tabla bg-white p-3 text-sm outline-none focus:border-2 focus:border-violet-lab"
+              placeholder="Razón obligatoria..."
+              value={cancelReason}
+              onChange={e => setCancelReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="secondary" onClick={() => { setCancelDialogOpen(false); setCancelReason(''); }} disabled={updating}>
+              Volver
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleCancel}
+              disabled={updating || !cancelReason.trim()}
+            >
+              {updating ? 'Cancelando...' : 'Cancelar orden'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

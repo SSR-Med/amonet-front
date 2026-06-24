@@ -1,4 +1,4 @@
-import { get, post } from './client';
+import { get, post, patch } from './client';
 import type { EstadoProduccion, CreateOrdenProduccionPayload, OrdenProduccionDetail, PaginatedResponse } from '@/types';
 
 export async function createOrdenProduccion(data: CreateOrdenProduccionPayload): Promise<void> {
@@ -11,6 +11,13 @@ export async function getEstadosProduccion(): Promise<EstadoProduccion[]> {
 
 export async function getOrdenProduccionById(id: string): Promise<OrdenProduccionDetail> {
   return get<OrdenProduccionDetail>(`/ordenes_produccion/${id}`);
+}
+
+export async function updateOrdenProduccionEstado(
+  id: string,
+  data: { amonet_estado_produccion_id: string; cancel_razon_descripcion?: string },
+): Promise<void> {
+  return patch<void>(`/ordenes_produccion/${id}/estado`, data);
 }
 
 export async function getAllOrdenesProduccion(
