@@ -298,7 +298,7 @@ export function KanbanBoard({ sprintId }: Props) {
     );
   }
 
-  const filteredColumnas = searchQuery
+  const filteredColumnas: Array<ColumnaKanban & { tareas?: TareaSprintItem[] }> = searchQuery
     ? columnas.map(col => ({
         ...col,
         tareas: (tareasPorColumna[col.id] || []).filter(t =>
@@ -335,7 +335,7 @@ export function KanbanBoard({ sprintId }: Props) {
           </div>
           <span className="text-xs text-gris-tecnico">
             {totalTareas} tarea{totalTareas !== 1 ? 's' : ''}
-            {searchQuery && ` · ${filteredColumnas.reduce((acc, c) => acc + c.tareas.length, 0)} visible${filteredColumnas.reduce((acc, c) => acc + c.tareas.length, 0) !== totalTareas ? 's' : ''}`}
+            {searchQuery && ` · ${filteredColumnas.reduce((acc, c) => acc + (c.tareas?.length ?? 0), 0)} visible${filteredColumnas.reduce((acc, c) => acc + (c.tareas?.length ?? 0), 0) !== totalTareas ? 's' : ''}`}
           </span>
         </div>
 
@@ -360,7 +360,7 @@ export function KanbanBoard({ sprintId }: Props) {
                 <KanbanColumn
                   key={col.id}
                   columna={col}
-                  tareas={searchQuery ? col.tareas : (tareasPorColumna[col.id] || [])}
+                  tareas={searchQuery ? (col.tareas ?? []) : (tareasPorColumna[col.id] || [])}
                   onCrearTarea={() => setCreateTaskOpen({ columnaId: col.id })}
                   onVerTarea={(t) => router.push(`/kanban/tareas/${t.id}`)}
                   onEliminarColumna={async () => {
