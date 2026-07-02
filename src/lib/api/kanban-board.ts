@@ -15,6 +15,10 @@ export async function updateColumnaKanban(id: string, data: { nombre?: string; p
   return put<ColumnaKanban>(`/columnas-kanban/${id}`, data);
 }
 
+export async function reorderColumnasKanban(items: { id: string; posicion: number }[]): Promise<ColumnaKanban[]> {
+  return put<ColumnaKanban[]>('/columnas-kanban/orden', { items });
+}
+
 export async function deleteColumnaKanban(id: string): Promise<void> {
   return del(`/columnas-kanban/${id}`);
 }

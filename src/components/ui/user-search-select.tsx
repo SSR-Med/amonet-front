@@ -37,6 +37,21 @@ export function UserSearchSelect({ value, onChange, placeholder = 'Buscar usuari
   }, []);
 
   useEffect(() => {
+    setLoading(true);
+    const fetchUsers = async () => {
+      try {
+        const data = await usersApi.getAllUsuarios();
+        setUsers(data);
+      } catch {
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     setLoading(true);
     const timeout = setTimeout(async () => {
@@ -50,7 +65,7 @@ export function UserSearchSelect({ value, onChange, placeholder = 'Buscar usuari
       }
     }, 200);
     return () => clearTimeout(timeout);
-  }, [open, query]);
+  }, [open]);
 
   const filtered = query
     ? users.filter(

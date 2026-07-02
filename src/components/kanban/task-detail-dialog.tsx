@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, User as UserIcon, Trash2, Save, Kanban } from 'lucide-react';
+import { Calendar, User as UserIcon, Trash2, Save, Kanban, X, Tag as TagIcon, Flag, MessageSquare, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { UserSearchSelect } from '@/components/ui/user-search-select';
 import {
   Select,
@@ -13,16 +13,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/utils';
 import { CommentSection } from './comment-section';
 import * as api from '@/lib/api/kanban-board';
-import type { TareaSprintItem, SprintItem, ColumnaKanban } from '@/types';
+import * as tagsApi from '@/lib/api/tags-kanban';
+import * as prioridadesApi from '@/lib/api/prioridades-kanban';
+import type { TareaSprintItem, SprintItem, ColumnaKanban, TagKanban, PrioridadKanban } from '@/types';
 
 interface Props {
   tarea: TareaSprintItem;
   onClose: () => void;
   onUpdated: () => void;
+}
+
+function getInitials(nombre: string): string {
+  return nombre
+    .split(' ')
+    .slice(0, 2)
+    .map(n => n[0])
+    .join('')
+    .toUpperCase();
+}
+
+function getAvatarColor(id: string): string {
+  const colors = ['#7C4DCC', '#EC407A', '#42A5F5', '#66BB6A', '#FFA726', '#AB47BC', '#26A69A', '#EF5350', '#5C6BC0', '#78909C'];
+  const hash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return colors[hash % colors.length];
 }
 
 export function TaskDetailDialog({ tarea, onClose, onUpdated }: Props) {
@@ -37,10 +55,18 @@ export function TaskDetailDialog({ tarea, onClose, onUpdated }: Props) {
   const [sprints, setSprints] = useState<SprintItem[]>([]);
   const [columnas, setColumnas] = useState<ColumnaKanban[]>([]);
   const [saving, setSaving] = useState(false);
+  const [tagsDisponibles, setTagsDisponibles] = useState<TagKanban[]>([]);
+  const [prioridades, setPrioridades] = useState<PrioridadKanban[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>(tarea.tags.map(t => t.id));
+  const [prioridadId, setPrioridadId] = useState(tarea.prioridad?.id || '');
 
   useEffect(() => {
-    api.getSprints(1, 100).then(res => setSprints(res.items)).catch(() => {});
-    api.getColumnasKanban().then(setColumnas).catch(() => {});
+    Promise.all([
+      api.getSprints(1, 100).then(res => setSprints(res.items)).catch(() => {}),
+      api.getColumnasKanban().then(setColumnas).catch(() => {}),
+      tagsApi.getAllTagsKanban(1, 99).then(r => setTagsDisponibles(r.items)).catch(() => {}),
+      prioridadesApi.getAllPrioridadesKanban(1, 99).then(r => setPrioridades(r.items)).catch(() => {}),
+    ]);
   }, []);
 
   const handleSave = async () => {
@@ -53,7 +79,8 @@ export function TaskDetailDialog({ tarea, onClose, onUpdated }: Props) {
         fecha_vencimiento: fechaVencimiento ? fechaVencimiento + 'T00:00:00' : null,
         amonet_sprint_id: sprintId,
         amonet_columna_kanban_id: columnaId,
-        amonet_prioridad_kanban_id: tarea.prioridad?.id || null,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        amonet_prioridad_kanban_id: prioridadId || null,
       });
       toast({ title: 'Tarea actualizada', variant: 'success' });
       setEditando(false);
@@ -77,136 +104,265 @@ export function TaskDetailDialog({ tarea, onClose, onUpdated }: Props) {
     }
   };
 
+  const vencida = tarea.fecha_vencimiento && new Date(tarea.fecha_vencimiento) < new Date();
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>{editando ? 'Editar tarea' : tarea.titulo}</DialogTitle>
-            <div className="flex items-center gap-2">
-              {!editando ? (
-                <>
-                  <Button variant="secondary" size="sm" onClick={() => setEditando(true)}>Editar</Button>
-                  <Button variant="secondary" size="sm" onClick={handleDelete} className="text-coral-alerta">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" onClick={handleSave} disabled={saving}>
-                  <Save className="h-4 w-4 mr-1" />
-                  {saving ? 'Guardando...' : 'Guardar'}
-                </Button>
-              )}
-            </div>
+      <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-2xl border-border-tabla shadow-2xl max-h-[85vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border-tabla">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setEditando(!editando)}
+              className={`
+                px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
+                ${editando
+                  ? 'bg-violet-lab text-white'
+                  : 'bg-lila-50 text-lila-700 hover:bg-lila-100'
+                }
+              `}
+            >
+              {editando ? 'Cancelar' : 'Editar'}
+            </button>
           </div>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {editando ? (
-            <>
-              <div>
-                <label className="text-sm font-medium text-lila-900">Título</label>
-                <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-lila-900">Descripción</label>
-                <textarea
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  className="w-full rounded-lg border border-border-tabla px-3 py-2 text-sm resize-none h-24 outline-none focus:border-violet-lab"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium text-lila-900">Sprint</label>
-                  <Select value={sprintId} onValueChange={setSprintId}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sprints.map(s => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.descripcion || `Sprint ${s.contador}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-lila-900">Columna</label>
-                  <Select value={columnaId} onValueChange={setColumnaId}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {columnas.map(c => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-lila-900">Asignado</label>
-                <UserSearchSelect value={asignadoId} onChange={setAsignadoId} placeholder="Sin asignar" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-lila-900">Fecha vencimiento</label>
-                <Input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} />
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <p className="text-xs text-gris-tecnico mb-1">Descripción</p>
-                <p className="text-sm text-lila-800 whitespace-pre-wrap">{tarea.descripcion || 'Sin descripción'}</p>
-              </div>
-              <div className="flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center gap-2 text-gris-tecnico">
-                  <Kanban className="h-4 w-4" />
-                  {sprints.find(s => s.id === tarea.amonet_sprint_id)?.descripcion || sprints.find(s => s.id === tarea.amonet_sprint_id)?.contador ? `Sprint ${sprints.find(s => s.id === tarea.amonet_sprint_id)?.contador}` : 'Sin sprint'}
-                </div>
-                <div className="flex items-center gap-2 text-gris-tecnico">
-                  <UserIcon className="h-4 w-4" />
-                  {tarea.asignado?.nombre || 'Sin asignar'}
-                </div>
-                {tarea.prioridad && (
-                  <span
-                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white"
-                    style={{ backgroundColor: `rgb(${tarea.prioridad.color_red},${tarea.prioridad.color_green},${tarea.prioridad.color_blue})` }}
-                  >
-                    {tarea.prioridad.nombre}
-                  </span>
-                )}
-                {tarea.fecha_vencimiento && (
-                  <span className="flex items-center gap-1 text-gris-tecnico">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(tarea.fecha_vencimiento).toLocaleDateString('es-ES')}
-                  </span>
-                )}
-              </div>
-              {tarea.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {tarea.tags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
-                      style={{ backgroundColor: `rgb(${tag.color_red},${tag.color_green},${tag.color_blue})` }}
-                    >
-                      {tag.nombre}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          <hr className="border-border-tabla" />
-
-          <CommentSection tareaId={tarea.id} />
+          <div className="flex items-center gap-2">
+            {!editando && (
+              <button
+                onClick={handleDelete}
+                className="p-2 rounded-lg text-coral-alerta hover:bg-rose-50 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-gris-tecnico hover:bg-lila-50 hover:text-lila-900 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-6 py-5">
+            {editando ? (
+              <div className="space-y-5">
+                <div>
+                  <Input
+                    value={titulo}
+                    onChange={(e) => setTitulo(e.target.value)}
+                    className="text-base font-semibold border-0 border-b-2 border-border-tabla rounded-none px-0 py-2 focus:border-violet-lab focus:ring-0 shadow-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gris-tecnico uppercase tracking-wide">Descripción</label>
+                  <textarea
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    className="w-full rounded-xl border border-border-tabla px-3 py-2.5 text-sm resize-none h-24 outline-none focus:border-violet-lab focus:ring-2 focus:ring-violet-lab/10 transition-all mt-1.5"
+                    placeholder="Agregar descripción..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-gris-tecnico uppercase tracking-wide">Sprint</label>
+                    <div className="mt-1.5">
+                      <Select value={sprintId} onValueChange={setSprintId}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sprints.map(s => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.descripcion || `Sprint ${s.contador}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gris-tecnico uppercase tracking-wide">Columna</label>
+                    <div className="mt-1.5">
+                      <Select value={columnaId} onValueChange={setColumnaId}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {columnas.map(c => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-gris-tecnico uppercase tracking-wide">Asignado</label>
+                    <div className="mt-1.5">
+                      <UserSearchSelect value={asignadoId} onChange={setAsignadoId} placeholder="Sin asignar" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gris-tecnico uppercase tracking-wide">Fecha vencimiento</label>
+                    <div className="mt-1.5">
+                      <Input
+                        type="date"
+                        value={fechaVencimiento}
+                        onChange={(e) => setFechaVencimiento(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gris-tecnico uppercase tracking-wide">Prioridad</label>
+                  <div className="mt-1.5">
+                    <Select value={prioridadId} onValueChange={setPrioridadId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Sin prioridad" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {prioridades.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            <span className="flex items-center gap-2">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full"
+                                style={{ backgroundColor: `rgb(${p.color_red},${p.color_green},${p.color_blue})` }}
+                              />
+                              {p.nombre}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gris-tecnico uppercase tracking-wide">Tags</label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {tagsDisponibles.map((tag) => {
+                      const selected = selectedTags.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          onClick={() => setSelectedTags((prev) => selected ? prev.filter((t) => t !== tag.id) : [...prev, tag.id])}
+                          className={`
+                            inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all
+                            ${selected
+                              ? 'text-white shadow-sm'
+                              : 'bg-lila-50 text-lila-700 hover:bg-lila-100'
+                            }
+                          `}
+                          style={selected ? { backgroundColor: `rgb(${tag.color_red},${tag.color_green},${tag.color_blue})` } : {}}
+                        >
+                          {selected && <Plus className="h-3 w-3" />}
+                          {tag.nombre}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-lila-900 leading-snug">{tarea.titulo}</h2>
+                </div>
+
+                {tarea.descripcion && (
+                  <div className="p-4 rounded-xl bg-lavanda-soft/50 border border-border-tabla/50">
+                    <p className="text-sm text-lila-800 whitespace-pre-wrap leading-relaxed">{tarea.descripcion}</p>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-border-tabla">
+                    <Kanban className="h-4 w-4 text-gris-tecnico" />
+                    <span className="text-xs font-medium text-lila-900">
+                      {columnas.find(c => c.id === tarea.amonet_columna_kanban_id)?.nombre || 'Sin columna'}
+                    </span>
+                  </div>
+
+                  {tarea.asignado && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-border-tabla">
+                      <div
+                        className="flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white"
+                        style={{ backgroundColor: getAvatarColor(tarea.asignado.id) }}
+                      >
+                        {getInitials(tarea.asignado.nombre)}
+                      </div>
+                      <span className="text-xs font-medium text-lila-900">{tarea.asignado.nombre}</span>
+                    </div>
+                  )}
+
+                  {tarea.prioridad && (
+                    <div
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-white"
+                      style={{ backgroundColor: `rgb(${tarea.prioridad.color_red},${tarea.prioridad.color_green},${tarea.prioridad.color_blue})` }}
+                    >
+                      <Flag className="h-3.5 w-3.5" />
+                      <span className="text-xs font-semibold">{tarea.prioridad.nombre}</span>
+                    </div>
+                  )}
+
+                  {tarea.fecha_vencimiento && (
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border ${vencida ? 'border-coral-alerta bg-rose-50' : 'border-border-tabla'}`}>
+                      <Calendar className={`h-4 w-4 ${vencida ? 'text-coral-alerta' : 'text-gris-tecnico'}`} />
+                      <span className={`text-xs font-medium ${vencida ? 'text-coral-alerta' : 'text-lila-900'}`}>
+                        {vencida ? 'Venció ' : ''}{new Date(tarea.fecha_vencimiento).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {tarea.tags.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <TagIcon className="h-3.5 w-3.5 text-gris-tecnico" />
+                      <span className="text-xs font-medium text-gris-tecnico">Tags</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {tarea.tags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium text-white"
+                          style={{
+                            backgroundColor: `rgb(${tag.color_red},${tag.color_green},${tag.color_blue})`,
+                          }}
+                        >
+                          {tag.nombre}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="px-6 py-4 border-t border-border-tabla bg-lavanda-soft/20">
+            <CommentSection tareaId={tarea.id} />
+          </div>
+        </div>
+
+        {editando && (
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border-tabla bg-white">
+            <Button variant="secondary" onClick={() => setEditando(false)} className="rounded-xl">
+              Cancelar
+            </Button>
+            <Button onClick={handleSave} disabled={saving} className="rounded-xl bg-violet-lab hover:bg-violet-700">
+              {saving ? 'Guardando...' : 'Guardar cambios'}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

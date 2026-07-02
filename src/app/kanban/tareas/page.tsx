@@ -183,7 +183,7 @@ export default function TareasPage() {
           <div className="space-y-3 mb-4">
             {items.map(tarea => (
               <Card key={tarea.id} className="cursor-pointer hover:border-violet-lab transition-colors">
-                <CardContent className="p-4" onClick={() => router.push(`/kanban/board/${tarea.amonet_sprint_id}`)}>
+                <CardContent className="p-4" onClick={() => router.push(`/kanban/tareas/${tarea.id}`)}>
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">

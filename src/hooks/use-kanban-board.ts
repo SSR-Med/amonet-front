@@ -89,10 +89,8 @@ export function useKanbanBoard(sprintId?: string) {
     const old = columnas;
     setColumnas(nuevasColumnas);
     try {
-      await Promise.all(
-        nuevasColumnas.map((col, i) =>
-          api.updateColumnaKanban(col.id, { posicion: i + 1 }),
-        ),
+      await api.reorderColumnasKanban(
+        nuevasColumnas.map((col, i) => ({ id: col.id, posicion: i + 1 })),
       );
     } catch {
       setColumnas(old);
