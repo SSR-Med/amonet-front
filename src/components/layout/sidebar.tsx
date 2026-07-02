@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Tag, FlaskConical, Variable, LayoutDashboard, Users, UserCircle, LogOut, FileText, Archive, ClipboardList } from 'lucide-react';
+import { Package, Tag, FlaskConical, Variable, LayoutDashboard, Users, UserCircle, LogOut, FileText, Archive, ClipboardList, ArrowLeft, Tags, ArrowUpFromDot, Kanban, ListTodo, IterationCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 
-const modules = [
+const productionModules = [
   { name: 'Productos', href: '/products', icon: Package, adminOnly: false },
   { name: 'Marcas', href: '/brands', icon: Tag, adminOnly: false },
   { name: 'Materias Primas', href: '/raw-materials', icon: FlaskConical, adminOnly: false },
@@ -17,30 +17,47 @@ const modules = [
   { name: 'Logs', href: '/logs', icon: FileText, adminOnly: true },
 ];
 
+const kanbanModules = [
+  { name: 'Board', href: '/kanban/board', icon: Kanban, adminOnly: false },
+  { name: 'Sprints', href: '/kanban/sprints', icon: IterationCcw, adminOnly: false },
+  { name: 'Todas las tareas', href: '/kanban/tareas', icon: ListTodo, adminOnly: false },
+  { name: 'Tags', href: '/kanban/tags', icon: Tags, adminOnly: false },
+  { name: 'Prioridades', href: '/kanban/prioridades', icon: ArrowUpFromDot, adminOnly: false },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { isAdmin, logout } = useAuth();
+  const isKanban = pathname?.startsWith('/kanban');
 
   const isActive = (href: string) => {
-    if (href === '/products') {
-      return pathname === '/products' || pathname?.startsWith('/products');
-    }
-    return pathname === href || pathname?.startsWith(href + '/') || pathname === href;
+    return pathname === href || pathname?.startsWith(href + '/') || false;
   };
+
+  const modules = isKanban ? kanbanModules : productionModules;
+  const sectionTitle = isKanban ? 'Planeación' : 'Producción';
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-60 bg-lavanda-soft border-r border-border-tabla">
       <div className="flex h-full flex-col">
         <div className="flex h-16 items-center border-b border-border-tabla px-6">
           <Link href="/" className="flex items-center gap-2">
-            <FlaskConical className="h-6 w-6 text-violet-lab" />
+            <LayoutDashboard className="h-5 w-5 text-violet-lab" />
             <span className="text-lg font-medium text-lila-900">Amonet</span>
           </Link>
         </div>
 
         <nav className="flex-1 space-y-1 p-4">
+          <Link
+            href="/"
+            className="flex items-center gap-3 rounded-8 px-3 py-2 text-sm font-medium text-violet-lab hover:bg-lila-50 transition-colors mb-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Volver al portal</span>
+          </Link>
+
           <p className="px-3 py-2 text-xs font-medium text-gris-tecnico uppercase tracking-wider">
-            Módulos
+            {sectionTitle}
           </p>
           {modules
             .filter((m) => !m.adminOnly || isAdmin)
@@ -82,15 +99,6 @@ export function Sidebar() {
         </nav>
 
         <div className="border-t border-border-tabla p-4 space-y-1">
-          <Link
-            href="/"
-            className={cn(
-              'flex items-center gap-3 rounded-8 px-3 py-2 text-sm font-medium transition-colors text-lila-800 hover:bg-lila-50'
-            )}
-          >
-            <LayoutDashboard className="h-5 w-5" />
-            Dashboard
-          </Link>
           <button
             onClick={logout}
             className="flex w-full items-center gap-3 rounded-8 px-3 py-2 text-sm font-medium text-coral-alerta hover:bg-rose-50 transition-colors"

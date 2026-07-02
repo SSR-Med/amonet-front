@@ -3,3 +3,5 @@ export { useRawMaterialStore } from './raw-material-store';
 export { useProductVariableStore } from './product-variable-store';
 export { useProductStore } from './product-store';
 export { useUserStore } from './user-store';
+export { useTagKanbanStore } from './tag-kanban-store';
+export { usePrioridadKanbanStore } from './prioridad-kanban-store';

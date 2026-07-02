@@ -8,3 +8,4 @@ export { Toaster } from './toaster';
 export { TooltipProvider } from './tooltip';
 export { Badge } from './badge';
 export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table';
+export { ColorPicker } from './color-picker';

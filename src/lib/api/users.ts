@@ -30,3 +30,7 @@ export async function updateUser(id: string, data: { documento?: string; nombre?
 export async function deleteUser(id: string): Promise<void> {
   return del(`/usuarios/${id}`);
 }
+
+export async function getAllUsuarios(): Promise<{ id: string; documento: string; nombre: string }[]> {
+  return get<{ id: string; documento: string; nombre: string }[]>('/usuarios/simples');
+}

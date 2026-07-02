@@ -38,3 +38,21 @@ export const productSchema = z.object({
 });
 
 export type ProductFormData = z.infer<typeof productSchema>;
+
+export const tagKanbanSchema = z.object({
+  nombre: z.string().min(1, 'El nombre es requerido'),
+  color_red: z.coerce.number().int().min(0, 'Mínimo 0').max(255, 'Máximo 255'),
+  color_green: z.coerce.number().int().min(0, 'Mínimo 0').max(255, 'Máximo 255'),
+  color_blue: z.coerce.number().int().min(0, 'Mínimo 0').max(255, 'Máximo 255'),
+});
+
+export type TagKanbanFormData = z.infer<typeof tagKanbanSchema>;
+
+export const prioridadKanbanSchema = z.object({
+  nombre: z.string().min(1, 'El nombre es requerido'),
+  color_red: z.coerce.number().int().min(0, 'Mínimo 0').max(255, 'Máximo 255'),
+  color_green: z.coerce.number().int().min(0, 'Mínimo 0').max(255, 'Máximo 255'),
+  color_blue: z.coerce.number().int().min(0, 'Mínimo 0').max(255, 'Máximo 255'),
+});
+
+export type PrioridadKanbanFormData = z.infer<typeof prioridadKanbanSchema>;

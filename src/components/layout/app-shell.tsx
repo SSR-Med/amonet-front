@@ -15,17 +15,22 @@ export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
   const { isAuthenticated, loading } = useAuth();
   const isLoginPage = pathname === '/login';
+  const isPortalPage = pathname === '/';
 
   useEffect(() => {
-    if (!loading && !isAuthenticated && !isLoginPage) {
+    if (!loading && !isAuthenticated && !isLoginPage && !isPortalPage) {
       router.push('/login');
     }
-  }, [loading, isAuthenticated, isLoginPage, router]);
+  }, [loading, isAuthenticated, isLoginPage, isPortalPage, router]);
 
   if (loading) return null;
 
   if (isLoginPage) {
     return <>{children}</>;
+  }
+
+  if (isPortalPage) {
+    return <HydrationGate>{children}</HydrationGate>;
   }
 
   if (!isAuthenticated) return null;

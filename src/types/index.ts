@@ -162,6 +162,75 @@ export interface OrdenProduccionDetail {
   materias_primas: OrdenProduccionMateriaPrima[];
 }
 
+export interface TagKanban {
+  id: string;
+  nombre: string;
+  color_red: number;
+  color_green: number;
+  color_blue: number;
+  activo: boolean;
+}
+
+export interface PrioridadKanban {
+  id: string;
+  nombre: string;
+  color_red: number;
+  color_green: number;
+  color_blue: number;
+  activo: boolean;
+}
+
+export interface ColumnaKanban {
+  id: string;
+  nombre: string;
+  posicion: number;
+  activo: boolean;
+}
+
+export interface SprintItem {
+  id: string;
+  contador: number;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+  activo: boolean;
+  principal: boolean;
+  descripcion: string | null;
+  usuario_alta: UsuarioInfo;
+  usuario_modifica: UsuarioInfo | null;
+  fecha_modifica: string | null;
+}
+
+export interface ComentarioTarea {
+  id: string;
+  amonet_tarea_sprint_id: string;
+  comentario: string;
+  activo: boolean;
+  usuario_alta: UsuarioInfo;
+  fecha_alta: string;
+  fecha_modifica: string | null;
+}
+
+export interface TareaSprintItem {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  asignado: UsuarioInfo;
+  fecha_vencimiento: string | null;
+  tags: TagKanban[];
+  prioridad: PrioridadKanban | null;
+  amonet_sprint_id: string;
+  amonet_columna_kanban_id: string;
+  usuario_alta: UsuarioInfo;
+  fecha_alta: string;
+  usuario_modifica: UsuarioInfo | null;
+  fecha_modifica: string | null;
+}
+
+export interface ColumnaConTareas {
+  columna: ColumnaKanban;
+  tareas: TareaSprintItem[];
+}
+
 export interface CreateOrdenProduccionPayload {
   descripcion: string;
   amonet_producto_id: string;
