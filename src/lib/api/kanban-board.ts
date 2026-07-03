@@ -125,7 +125,7 @@ export async function getAllTareas(params?: {
       }
     });
   }
-  return get<PaginatedResponse<TareaSprintItem>>(`/tareas-sprint?${search}`);
+  return get<PaginatedResponse<TareaSprintItem>>(`/tareas-sprint/?${search}`);
 }
 
 /* ── Crear sprint y finalizar anterior ── */
