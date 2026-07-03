@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { ADMIN } from '@/lib/constants';
+import { useAuth } from '@/contexts/auth-context';
 import { useUserStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -13,10 +15,17 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { User } from '@/types';
 
 export default function UsersPage() {
+  const { isAdmin } = useAuth();
   const { items: users, totalItems, currentPage, pageSize, loading, getAll, delete: deleteUser } = useUserStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<User | null>(null);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isAdmin) router.push('/');
+  }, [isAdmin, router]);
 
   const fetchUsers = useCallback(
     (page = 1) => getAll(page, pageSize),
@@ -100,15 +109,15 @@ export default function UsersPage() {
       <PageHeader
         title="Usuarios"
         description="Gestiona los usuarios del sistema"
-        createHref="/users/new"
+        createHref={isAdmin ? '/users/new' : undefined}
         createLabel="Crear usuario"
       />
       <div className="px-6">
         <EntityTable
           data={users}
           columns={columns}
-          editHref={(user) => `/users/${user.id}/edit`}
-          onDelete={handleDelete}
+          editHref={isAdmin ? (user) => `/users/${user.id}/edit` : undefined}
+          onDelete={isAdmin ? handleDelete : undefined}
           pagination={{
             currentPage,
             totalItems,

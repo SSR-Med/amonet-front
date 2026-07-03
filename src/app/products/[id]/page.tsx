@@ -14,7 +14,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Product } from '@/types';
 
 export default function ProductDetailPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -55,7 +55,7 @@ export default function ProductDetailPage() {
             <p className="text-sm text-gris-tecnico">Código: {product.codigo}</p>
           </div>
         </div>
-        {isAdmin && (
+        {(isAdmin || isJefeProduccion) && (
           <Button asChild>
             <Link href={`/products/${product.id}/edit`}>
               <Pencil className="mr-2 h-4 w-4" />

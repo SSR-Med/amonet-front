@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 import { PageHeader } from '@/components/layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,12 +22,18 @@ function formatPeso(peso: number | null): string {
 }
 
 export default function LogsPage() {
+  const router = useRouter();
+  const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [items, setItems] = useState<LogItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin) router.push('/');
+  }, [isAdmin, router]);
 
   const today = new Date().toISOString().split('T')[0];
   const [fechaInicio, setFechaInicio] = useState(today);
@@ -85,6 +93,8 @@ export default function LogsPage() {
   };
 
   const totalPages = Math.ceil(totalItems / pageSize);
+
+  if (!isAdmin) return null;
 
   return (
     <>
