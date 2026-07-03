@@ -27,6 +27,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('amonet_token');
+      localStorage.removeItem('amonet_user');
+      window.location.href = '/login';
+    }
+
     const body = await res.json().catch(() => ({}));
     throw new ApiError(
       res.status,

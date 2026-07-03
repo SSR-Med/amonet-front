@@ -45,7 +45,7 @@ interface AvailablePageState {
 export default function NewOrdenProduccionPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
 
   const { getAll: getAllProducts, items: products } = useProductStore();
   const { getAll: getAllMaterials, items: rawMaterials, loadCatalogs } = useRawMaterialStore();
@@ -77,8 +77,8 @@ export default function NewOrdenProduccionPage() {
   }, [getAllProducts, getAllMaterials, getAllVariables, loadCatalogs]);
 
   useEffect(() => {
-    if (!isAdmin) router.push('/');
-  }, [isAdmin, router]);
+    if (!isAdmin && !isJefeProduccion) router.push('/');
+  }, [isAdmin, isJefeProduccion, router]);
 
   const filteredProducts = useMemo(() => {
     const q = productSearch.toLowerCase().trim();
@@ -297,7 +297,7 @@ export default function NewOrdenProduccionPage() {
     }
   }, [selectedProductId, selectedProduct, descripcion, observaciones, variableValues, variables, isFreeMode, freeEditMaterials, calculatedMaterials, selectedContainersMap, router, toast]);
 
-  if (!isAdmin) return null;
+  if (!isAdmin && !isJefeProduccion) return null;
 
   const steps = [
     { num: 1, label: 'Producto' },
