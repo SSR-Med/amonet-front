@@ -13,7 +13,7 @@ const productionModules = [
   { name: 'Variables Globales', href: '/product-variables', icon: Variable, adminOnly: false },
   { name: 'Usuarios', href: '/users', icon: Users, adminOnly: true },
   { name: 'Inventario', href: '/inventario', icon: Archive, adminOnly: false },
-  { name: 'Órdenes Prod.', href: '/ordenes-produccion', icon: ClipboardList, adminOnly: true },
+  { name: 'Órdenes Prod.', href: '/ordenes-produccion', icon: ClipboardList, adminOnly: false },
   { name: 'Logs', href: '/logs', icon: FileText, adminOnly: true },
 ];
 
