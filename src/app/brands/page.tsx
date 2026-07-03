@@ -12,7 +12,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Brand } from '@/types';
 
 export default function BrandsPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const { items: brands, totalItems, currentPage, pageSize, loading, getAll, delete: deleteBrand } = useBrandStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -72,7 +72,7 @@ export default function BrandsPage() {
         <EmptyState
           title="Aún no hay marcas"
           description="Crea tu primera marca para comenzar a gestionar tus productos."
-          {...(isAdmin ? { href: '/brands/new', hrefLabel: 'Crear marca' } : {})}
+          {...(isAdmin || isJefeProduccion ? { href: '/brands/new', hrefLabel: 'Crear marca' } : {})}
           icon="brand"
         />
       </>
@@ -84,13 +84,13 @@ export default function BrandsPage() {
       <PageHeader
         title="Marcas"
         description="Gestiona las marcas de tus productos"
-        {...(isAdmin ? { createHref: '/brands/new', createLabel: 'Crear marca' } : {})}
+        {...(isAdmin || isJefeProduccion ? { createHref: '/brands/new', createLabel: 'Crear marca' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={brands}
           columns={columns}
-          {...(isAdmin ? { editHref: (brand: Brand) => `/brands/${brand.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
+          {...(isAdmin || isJefeProduccion ? { editHref: (brand: Brand) => `/brands/${brand.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -100,7 +100,7 @@ export default function BrandsPage() {
           }}
         />
       </div>
-      {isAdmin && (
+      {(isAdmin || isJefeProduccion) && (
         <ConfirmDeleteModal
           open={deleteModalOpen}
           onOpenChange={setDeleteModalOpen}

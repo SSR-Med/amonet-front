@@ -7,14 +7,14 @@ import { PageHeader } from '@/components/layout';
 import { ProductVariableForm } from '@/components/forms';
 
 export default function NewProductVariablePage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAdmin) router.push('/product-variables');
-  }, [isAdmin, router]);
+    if (!isAdmin && !isJefeProduccion) router.push('/product-variables');
+  }, [isAdmin, isJefeProduccion, router]);
 
-  if (!isAdmin) return null;
+  if (!isAdmin && !isJefeProduccion) return null;
 
   return (
     <>

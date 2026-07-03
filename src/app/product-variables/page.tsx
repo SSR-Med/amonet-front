@@ -12,7 +12,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { ProductVariable } from '@/types';
 
 export default function ProductVariablesPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteVariable } = useProductVariableStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -74,7 +74,7 @@ export default function ProductVariablesPage() {
         <EmptyState
           title="Aún no hay variables"
           description="Crea tu primera variable global para usarla en las fórmulas de tus productos."
-          {...(isAdmin ? { href: '/product-variables/new', hrefLabel: 'Crear variable' } : {})}
+          {...(isAdmin || isJefeProduccion ? { href: '/product-variables/new', hrefLabel: 'Crear variable' } : {})}
           icon="variable"
         />
       </>
@@ -86,13 +86,13 @@ export default function ProductVariablesPage() {
       <PageHeader
         title="Variables Globales"
         description="Gestiona las variables disponibles para fórmulas"
-        {...(isAdmin ? { createHref: '/product-variables/new', createLabel: 'Crear variable' } : {})}
+        {...(isAdmin || isJefeProduccion ? { createHref: '/product-variables/new', createLabel: 'Crear variable' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={items}
           columns={columns}
-          {...(isAdmin ? { editHref: (pv: ProductVariable) => `/product-variables/${pv.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
+          {...(isAdmin || isJefeProduccion ? { editHref: (pv: ProductVariable) => `/product-variables/${pv.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -102,7 +102,7 @@ export default function ProductVariablesPage() {
           }}
         />
       </div>
-      {isAdmin && (
+      {(isAdmin || isJefeProduccion) && (
         <ConfirmDeleteModal
           open={deleteModalOpen}
           onOpenChange={setDeleteModalOpen}

@@ -11,7 +11,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { RawMaterial } from '@/types';
 
 export default function EditRawMaterialPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -19,8 +19,8 @@ export default function EditRawMaterialPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAdmin) router.push('/raw-materials');
-  }, [isAdmin, router]);
+    if (!isAdmin && !isJefeProduccion) router.push('/raw-materials');
+  }, [isAdmin, isJefeProduccion, router]);
 
   useEffect(() => {
     (async () => {
@@ -36,7 +36,7 @@ export default function EditRawMaterialPage() {
     })();
   }, [params.id, router, toast]);
 
-  if (!isAdmin || loading) return null;
+  if ((!isAdmin && !isJefeProduccion) || loading) return null;
   if (!rawMaterial) return null;
 
   return (

@@ -7,14 +7,14 @@ import { PageHeader } from '@/components/layout';
 import { ProductForm } from '@/components/forms';
 
 export default function NewProductPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAdmin) router.push('/products');
-  }, [isAdmin, router]);
+    if (!isAdmin && !isJefeProduccion) router.push('/products');
+  }, [isAdmin, isJefeProduccion, router]);
 
-  if (!isAdmin) return null;
+  if (!isAdmin && !isJefeProduccion) return null;
 
   return (
     <>

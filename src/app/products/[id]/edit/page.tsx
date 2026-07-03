@@ -11,7 +11,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Product } from '@/types';
 
 export default function EditProductPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -19,8 +19,8 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAdmin) router.push('/products');
-  }, [isAdmin, router]);
+    if (!isAdmin && !isJefeProduccion) router.push('/products');
+  }, [isAdmin, isJefeProduccion, router]);
 
   useEffect(() => {
     (async () => {
@@ -36,7 +36,7 @@ export default function EditProductPage() {
     })();
   }, [params.id, router, toast]);
 
-  if (!isAdmin || loading) return null;
+  if ((!isAdmin && !isJefeProduccion) || loading) return null;
   if (!product) return null;
 
   return (

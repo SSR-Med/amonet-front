@@ -7,14 +7,14 @@ import { PageHeader } from '@/components/layout';
 import { BrandForm } from '@/components/forms';
 
 export default function NewBrandPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAdmin) router.push('/brands');
-  }, [isAdmin, router]);
+    if (!isAdmin && !isJefeProduccion) router.push('/brands');
+  }, [isAdmin, isJefeProduccion, router]);
 
-  if (!isAdmin) return null;
+  if (!isAdmin && !isJefeProduccion) return null;
 
   return (
     <>

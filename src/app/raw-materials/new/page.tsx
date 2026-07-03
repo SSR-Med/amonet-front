@@ -7,14 +7,14 @@ import { PageHeader } from '@/components/layout';
 import { RawMaterialForm } from '@/components/forms';
 
 export default function NewRawMaterialPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAdmin) router.push('/raw-materials');
-  }, [isAdmin, router]);
+    if (!isAdmin && !isJefeProduccion) router.push('/raw-materials');
+  }, [isAdmin, isJefeProduccion, router]);
 
-  if (!isAdmin) return null;
+  if (!isAdmin && !isJefeProduccion) return null;
 
   return (
     <>

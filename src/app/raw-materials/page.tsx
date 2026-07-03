@@ -16,7 +16,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { RawMaterial } from '@/types';
 
 export default function RawMaterialsPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteRawMaterial } = useRawMaterialStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -121,7 +121,7 @@ export default function RawMaterialsPage() {
         <EmptyState
           title="Aún no hay materias primas"
           description="Crea tu primera materia prima para comenzar a gestionar tus productos."
-          {...(isAdmin ? { href: '/raw-materials/new', hrefLabel: 'Crear materia prima' } : {})}
+          {...(isAdmin || isJefeProduccion ? { href: '/raw-materials/new', hrefLabel: 'Crear materia prima' } : {})}
           icon="material"
         />
       </>
@@ -133,13 +133,13 @@ export default function RawMaterialsPage() {
       <PageHeader
         title="Materias Primas"
         description="Gestiona las materias primas de tus productos"
-        {...(isAdmin ? { createHref: '/raw-materials/new', createLabel: 'Crear materia prima' } : {})}
+        {...(isAdmin || isJefeProduccion ? { createHref: '/raw-materials/new', createLabel: 'Crear materia prima' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={items}
           columns={columns}
-          {...(isAdmin ? { editHref: (rm: RawMaterial) => `/raw-materials/${rm.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
+          {...(isAdmin || isJefeProduccion ? { editHref: (rm: RawMaterial) => `/raw-materials/${rm.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -149,7 +149,7 @@ export default function RawMaterialsPage() {
           }}
         />
       </div>
-      {isAdmin && (
+      {(isAdmin || isJefeProduccion) && (
         <ConfirmDeleteModal
           open={deleteModalOpen}
           onOpenChange={setDeleteModalOpen}

@@ -11,7 +11,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Brand } from '@/types';
 
 export default function EditBrandPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -19,8 +19,8 @@ export default function EditBrandPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAdmin) router.push('/brands');
-  }, [isAdmin, router]);
+    if (!isAdmin && !isJefeProduccion) router.push('/brands');
+  }, [isAdmin, isJefeProduccion, router]);
 
   useEffect(() => {
     (async () => {
@@ -36,7 +36,7 @@ export default function EditBrandPage() {
     })();
   }, [params.id, router, toast]);
 
-  if (!isAdmin || loading) return null;
+  if ((!isAdmin && !isJefeProduccion) || loading) return null;
   if (!brand) return null;
 
   return (
