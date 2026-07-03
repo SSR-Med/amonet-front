@@ -29,7 +29,7 @@ export default function OrdenesProduccionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isJefeProduccion } = useAuth();
   const { getAll: getAllProducts, items: products } = useProductStore();
   const { getAll: getAllMaterials, items: rawMaterials } = useRawMaterialStore();
 
@@ -91,7 +91,7 @@ export default function OrdenesProduccionPage() {
       <PageHeader
         title="Órdenes de Producción"
         description="Gestiona las órdenes de producción"
-        createHref={isAdmin ? '/ordenes-produccion/new' : undefined}
+        createHref={(isAdmin || isJefeProduccion) ? '/ordenes-produccion/new' : undefined}
         createLabel="Nueva Orden"
       />
 
@@ -159,7 +159,7 @@ export default function OrdenesProduccionPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-gris-tecnico">No se encontraron órdenes de producción.</p>
-              {isAdmin && (
+              {(isAdmin || isJefeProduccion) && (
                 <Button asChild className="mt-4">
                   <Link href="/ordenes-produccion/new">Nueva Orden</Link>
                 </Button>
