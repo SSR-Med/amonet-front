@@ -5,6 +5,8 @@ function getToken(): string | null {
   return localStorage.getItem('amonet_token');
 }
 
+export const AUTH_EVENT = 'amonet:auth-changed';
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -21,28 +23,37 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers,
-    ...options,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const opts = { ...options, signal: options?.signal || controller.signal };
 
-  if (!res.ok) {
-    if (res.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('amonet_token');
-      localStorage.removeItem('amonet_user');
-      window.location.href = '/login';
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      headers,
+      ...opts,
+    });
+
+    if (!res.ok) {
+      if (res.status === 401 && typeof window !== 'undefined') {
+        localStorage.removeItem('amonet_token');
+        localStorage.removeItem('amonet_user');
+        window.dispatchEvent(new Event(AUTH_EVENT));
+        window.location.href = '/login';
+      }
+
+      const body = await res.json().catch(() => ({}));
+      throw new ApiError(
+        res.status,
+        body.error || 'UNKNOWN_ERROR',
+        body.message || `HTTP ${res.status}`,
+      );
     }
 
-    const body = await res.json().catch(() => ({}));
-    throw new ApiError(
-      res.status,
-      body.error || 'UNKNOWN_ERROR',
-      body.message || `HTTP ${res.status}`,
-    );
+    if (res.status === 204) return undefined as T;
+    return res.json();
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  if (res.status === 204) return undefined as T;
-  return res.json();
 }
 
 export function get<T>(path: string): Promise<T> {
@@ -63,4 +74,28 @@ export function patch<T>(path: string, body: unknown): Promise<T> {
 
 export function del<T = void>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' });
+}
+
+export async function requestFormData<T>(path: string, formData: FormData, method = 'POST'): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(
+      res.status,
+      body.error || 'UNKNOWN_ERROR',
+      body.message || `HTTP ${res.status}`,
+    );
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
 }

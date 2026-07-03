@@ -23,7 +23,7 @@ function formatPeso(peso: number | null): string {
 
 export default function LogsPage() {
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [items, setItems] = useState<LogItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,8 +32,8 @@ export default function LogsPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) router.push('/');
-  }, [isAdmin, router]);
+    if (!authLoading && !isAdmin) router.push('/');
+  }, [isAdmin, authLoading, router]);
 
   const today = new Date().toISOString().split('T')[0];
   const [fechaInicio, setFechaInicio] = useState(today);
@@ -62,7 +62,6 @@ export default function LogsPage() {
   const handleSearch = () => {
     setCurrentPage(1);
     setSearchClicked((c) => c + 1);
-    fetchLogs();
   };
 
   const handleDownload = async (log: LogItem) => {

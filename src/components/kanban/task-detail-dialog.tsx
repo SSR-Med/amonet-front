@@ -104,7 +104,7 @@ export function TaskDetailDialog({ tarea, onClose, onUpdated }: Props) {
     }
   };
 
-  const vencida = tarea.fecha_vencimiento && new Date(tarea.fecha_vencimiento) < new Date();
+  const vencida = tarea.fecha_vencimiento && new Date(tarea.fecha_vencimiento).toDateString() < new Date().toDateString();
 
   return (
     <Dialog open onOpenChange={onClose}>

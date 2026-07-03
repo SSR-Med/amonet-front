@@ -7,5 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getApiErrorMessage(err: unknown, fallback = 'Ha ocurrido un error inesperado'): string {
-  return err instanceof ApiError ? err.message : fallback;
+  if (err instanceof ApiError) return err.message;
+  if (err instanceof TypeError) return 'Error de conexión. Verifica tu internet e intenta de nuevo.';
+  if (err instanceof Error) return err.message;
+  return fallback;
 }

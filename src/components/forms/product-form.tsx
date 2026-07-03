@@ -70,7 +70,7 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
 
   const addRow = () => {
     const current = watch('materias_primas') || [];
-    setValue('materias_primas', [...current, { id_amonet_materia_prima: '', formula: '' }]);
+    setValue('materias_primas', [...current, { _key: crypto.randomUUID(), id_amonet_materia_prima: '', formula: '' }]);
   };
 
   const removeRow = (index: number) => {
@@ -164,7 +164,7 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
             const available = availableMaterials(usedIds);
 
             return (
-              <div key={index} className="flex items-start gap-3 p-3 border border-border-tabla rounded-8">
+              <div key={row._key || index} className="flex items-start gap-3 p-3 border border-border-tabla rounded-8">
                 <div className="flex-1 space-y-1">
                   <label className="text-xs font-medium text-gray-900">Materia Prima</label>
                   <Controller

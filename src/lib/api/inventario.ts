@@ -1,7 +1,5 @@
-import { get, patch } from './client';
+import { get, patch, requestFormData } from './client';
 import type { InventarioFormItem, InventarioItem, PaginatedResponse, UsuarioInfo } from '@/types';
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 export async function getAllInventario(
   page = 1,
@@ -24,16 +22,7 @@ export async function getInventarioById(id: string): Promise<InventarioItem> {
 }
 
 export async function downloadEvidencia(numeroIngreso: string): Promise<string> {
-  const token = localStorage.getItem('amonet_token');
-  const res = await fetch(`${BASE_URL}/inventario/evidencia?numero_ingreso=${encodeURIComponent(numeroIngreso)}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `HTTP ${res.status}`);
-  }
-  const data = await res.json();
-  return data.url;
+  return get<{ url: string }>(`/inventario/evidencia?numero_ingreso=${encodeURIComponent(numeroIngreso)}`).then(r => r.url);
 }
 
 export async function updateInventario(id: string, data: Record<string, unknown>): Promise<void> {
@@ -41,37 +30,15 @@ export async function updateInventario(id: string, data: Record<string, unknown>
 }
 
 export async function updateInventarioWithFile(id: string, data: Record<string, unknown>, archivo: File): Promise<void> {
-  const token = localStorage.getItem('amonet_token');
   const formData = new FormData();
   formData.append('data', JSON.stringify(data));
   formData.append('archivo', archivo);
-
-  const res = await fetch(`${BASE_URL}/inventario/${id}`, {
-    method: 'PATCH',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `HTTP ${res.status}`);
-  }
+  await requestFormData(`/inventario/${id}`, formData, 'PATCH');
 }
 
 export async function createInventario(items: InventarioFormItem[], archivo: File): Promise<void> {
-  const token = localStorage.getItem('amonet_token');
   const formData = new FormData();
   formData.append('items', JSON.stringify(items));
   formData.append('archivo', archivo);
-
-  const res = await fetch(`${BASE_URL}/inventario/`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `HTTP ${res.status}`);
-  }
+  await requestFormData('/inventario/', formData);
 }

@@ -55,7 +55,7 @@ export function CreateTaskDialog({ columnaId, sprintId, onClose, onCreated }: Pr
       await api.createTarea({
         titulo: titulo.trim(),
         descripcion: descripcion.trim(),
-        asignado: asignadoId || undefined as any,
+        asignado: asignadoId,
         fecha_vencimiento: fechaVencimiento ? `${fechaVencimiento}T00:00:00` : undefined,
         tags: tags.length > 0 ? tags : undefined,
         amonet_prioridad_kanban_id: prioridadId || null,

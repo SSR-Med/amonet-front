@@ -21,6 +21,7 @@ export function CommentSection({ tareaId }: Props) {
   const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -61,11 +62,12 @@ export function CommentSection({ tareaId }: Props) {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar este comentario?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirmId) return;
     try {
       const { del } = await import('@/lib/api/client');
-      await del(`/comentarios-tarea/${id}`);
+      await del(`/comentarios-tarea/${deleteConfirmId}`);
+      setDeleteConfirmId(null);
       fetch();
       toast({ title: 'Comentario eliminado', variant: 'success' });
     } catch (err) {
@@ -111,7 +113,7 @@ export function CommentSection({ tareaId }: Props) {
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(c.id)}
+                          onClick={() => setDeleteConfirmId(c.id)}
                           className="rounded p-1 text-gris-tecnico hover:bg-rose-50 hover:text-coral-alerta transition-colors"
                           title="Eliminar"
                         >
@@ -144,6 +146,14 @@ export function CommentSection({ tareaId }: Props) {
               )}
             </div>
           ))
+        )}
+
+        {deleteConfirmId && (
+          <div className="flex items-center gap-2 rounded-lg bg-coral-alerta/10 p-3 text-sm">
+            <span className="text-coral-alerta">¿Eliminar este comentario?</span>
+            <Button size="sm" variant="danger" onClick={handleDelete}>Eliminar</Button>
+            <Button size="sm" variant="secondary" onClick={() => setDeleteConfirmId(null)}>Cancelar</Button>
+          </div>
         )}
       </div>
 

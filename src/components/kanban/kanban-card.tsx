@@ -40,7 +40,7 @@ export function KanbanCard({ tarea, onClick, isOverlay }: Props) {
   };
 
   const vencida =
-    tarea.fecha_vencimiento && new Date(tarea.fecha_vencimiento) < new Date();
+    tarea.fecha_vencimiento && new Date(tarea.fecha_vencimiento).toDateString() < new Date().toDateString();
   const hoy = new Date();
   const diasRestantes = tarea.fecha_vencimiento
     ? Math.ceil((new Date(tarea.fecha_vencimiento).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))

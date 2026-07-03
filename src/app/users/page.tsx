@@ -15,7 +15,7 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { User } from '@/types';
 
 export default function UsersPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
   const { items: users, totalItems, currentPage, pageSize, loading, getAll, delete: deleteUser } = useUserStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -24,8 +24,8 @@ export default function UsersPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAdmin) router.push('/');
-  }, [isAdmin, router]);
+    if (!authLoading && !isAdmin) router.push('/');
+  }, [isAdmin, authLoading, router]);
 
   const fetchUsers = useCallback(
     (page = 1) => getAll(page, pageSize),

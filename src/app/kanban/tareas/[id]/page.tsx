@@ -142,7 +142,7 @@ export default function TareaDetailPage() {
 
   if (!tarea) return null;
 
-  const vencida = tarea.fecha_vencimiento && new Date(tarea.fecha_vencimiento) < new Date();
+  const vencida = tarea.fecha_vencimiento && new Date(tarea.fecha_vencimiento).toDateString() < new Date().toDateString();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-lavanja-soft/50 to-white">
