@@ -24,6 +24,7 @@ export const productVariableSchema = z.object({
 export type ProductVariableFormData = z.infer<typeof productVariableSchema>;
 
 export const productRawMaterialSchema = z.object({
+  _key: z.string().optional(),
   id_amonet_materia_prima: z.string().min(1, 'La materia prima es requerida'),
   formula: z.string().min(1, 'La fórmula es requerida'),
 });

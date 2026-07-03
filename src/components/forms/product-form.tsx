@@ -54,7 +54,7 @@ export function ProductForm({ initialData, entityId, mode = 'create' }: ProductF
       codigo: '',
       nombre: '',
       id_amonet_marca: '',
-      materias_primas: [{ id_amonet_materia_prima: '', formula: '' }],
+      materias_primas: [{ _key: crypto.randomUUID(), id_amonet_materia_prima: '', formula: '' }],
     },
   });
 
