@@ -8,7 +8,7 @@ export async function getColumnasKanban(): Promise<ColumnaKanban[]> {
 }
 
 export async function createColumnaKanban(data: { nombre: string; posicion?: number }): Promise<ColumnaKanban> {
-  return post<ColumnaKanban>('/columnas-kanban', data);
+  return post<ColumnaKanban>('/columnas-kanban/', data);
 }
 
 export async function updateColumnaKanban(id: string, data: { nombre?: string; posicion?: number }): Promise<ColumnaKanban> {
@@ -42,7 +42,7 @@ export async function createTarea(data: {
   amonet_sprint_id: string;
   amonet_columna_kanban_id: string;
 }): Promise<TareaSprintItem> {
-  return post<TareaSprintItem>('/tareas-sprint', data);
+  return post<TareaSprintItem>('/tareas-sprint/', data);
 }
 
 export async function updateTarea(
@@ -74,7 +74,7 @@ export async function getSprintPrincipal(): Promise<SprintItem> {
 
 export async function getSprints(page = 1, pageSize = 20): Promise<PaginatedResponse<SprintItem>> {
   const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
-  return get<PaginatedResponse<SprintItem>>(`/sprints?${params}`);
+  return get<PaginatedResponse<SprintItem>>(`/sprints/?${params}`);
 }
 
 export async function getSprintById(id: string): Promise<SprintItem> {
@@ -82,7 +82,7 @@ export async function getSprintById(id: string): Promise<SprintItem> {
 }
 
 export async function createSprint(descripcion?: string): Promise<SprintItem> {
-  return post<SprintItem>('/sprints', { descripcion });
+  return post<SprintItem>('/sprints/', { descripcion });
 }
 
 export async function updateSprint(id: string, data: { principal?: boolean; descripcion?: string }): Promise<SprintItem> {
@@ -99,7 +99,7 @@ export async function getComentariosByTarea(tareaId: string): Promise<Comentario
 }
 
 export async function createComentario(data: { amonet_tarea_sprint_id: string; comentario: string }): Promise<ComentarioTarea> {
-  return post<ComentarioTarea>('/comentarios-tarea', data);
+  return post<ComentarioTarea>('/comentarios-tarea/', data);
 }
 
 /* ── Tareas globales (independiente) ── */
