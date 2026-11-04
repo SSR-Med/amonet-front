@@ -22,3 +22,7 @@ export async function login(documento: string, password: string): Promise<LoginR
 export async function getMe(): Promise<CurrentUserResponse> {
   return get<CurrentUserResponse>('/usuarios/me');
 }
+
+export async function logout(): Promise<void> {
+  await post<void>('/usuarios/logout', {});
+}

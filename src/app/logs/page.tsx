@@ -66,9 +66,8 @@ export default function LogsPage() {
 
   const handleDownload = async (log: LogItem) => {
     try {
-      const token = localStorage.getItem('amonet_token');
       const url = `${API_URL}/logs/download?nombre=${encodeURIComponent(log.nombre)}`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(url, { credentials: 'include' });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

@@ -1,10 +1,5 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('amonet_token');
-}
-
 export const AUTH_EVENT = 'amonet:auth-changed';
 
 export class ApiError extends Error {
@@ -18,14 +13,25 @@ export class ApiError extends Error {
   }
 }
 
+function handleUnauthorized() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('amonet_user');
+  window.dispatchEvent(new Event(AUTH_EVENT));
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = getToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
-  const opts = { ...options, signal: options?.signal || controller.signal };
+  const opts: RequestInit = {
+    ...options,
+    credentials: 'include',
+    signal: options?.signal || controller.signal,
+  };
 
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
@@ -34,11 +40,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     });
 
     if (!res.ok) {
-      if (res.status === 401 && typeof window !== 'undefined') {
-        localStorage.removeItem('amonet_token');
-        localStorage.removeItem('amonet_user');
-        window.dispatchEvent(new Event(AUTH_EVENT));
-        window.location.href = '/login';
+      if (res.status === 401) {
+        handleUnauthorized();
       }
 
       const body = await res.json().catch(() => ({}));
@@ -77,17 +80,17 @@ export function del<T = void>(path: string): Promise<T> {
 }
 
 export async function requestFormData<T>(path: string, formData: FormData, method = 'POST'): Promise<T> {
-  const token = getToken();
-  const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers,
+    credentials: 'include',
     body: formData,
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
+
     const body = await res.json().catch(() => ({}));
     throw new ApiError(
       res.status,

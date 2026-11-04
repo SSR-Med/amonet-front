@@ -14,7 +14,6 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isJefeProduccion: boolean;
@@ -26,43 +25,60 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_KEY = 'amonet_token';
 const USER_KEY = 'amonet_user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY);
-    const storedUser = localStorage.getItem(USER_KEY);
-    if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-      }
+    let active = true;
+
+    const stored = localStorage.getItem(USER_KEY);
+    if (!stored) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    try {
+      setUser(JSON.parse(stored));
+    } catch {
+      localStorage.removeItem(USER_KEY);
+    }
+
+    authApi
+      .getMe()
+      .then((me) => {
+        if (!active) return;
+        const userData: User = { id: me.id, documento: me.documento, nombre: me.nombre, rol: me.rol };
+        localStorage.setItem(USER_KEY, JSON.stringify(userData));
+        setUser(userData);
+      })
+      .catch(() => {
+        if (!active) return;
+        localStorage.removeItem(USER_KEY);
+        setUser(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const login = useCallback(async (documento: string, password: string) => {
     const res = await authApi.login(documento, password);
     const userData: User = { id: res.id, documento: res.documento, nombre: res.nombre, rol: res.rol };
-    localStorage.setItem(TOKEN_KEY, res.token);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    setToken(res.token);
     setUser(userData);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
+    authApi.logout().catch(() => undefined);
     localStorage.removeItem(USER_KEY);
-    setToken(null);
     setUser(null);
     router.push('/login');
   }, [router]);
@@ -71,8 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        token,
-        isAuthenticated: !!token,
+        isAuthenticated: !!user,
         isAdmin: user?.rol === ADMIN,
         isJefeProduccion: user?.rol === JEFE_PRODUCCION,
         isCalidad: user?.rol === CALIDAD,
