@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { useBrandStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -12,7 +13,8 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Brand } from '@/types';
 
 export default function BrandsPage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const { items: brands, totalItems, currentPage, pageSize, loading, getAll, delete: deleteBrand } = useBrandStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -72,7 +74,7 @@ export default function BrandsPage() {
         <EmptyState
           title="Aún no hay marcas"
           description="Crea tu primera marca para comenzar a gestionar tus productos."
-          {...(isAdmin || isJefeProduccion ? { href: '/brands/new', hrefLabel: 'Crear marca' } : {})}
+          {...(canManage ? { href: '/brands/new', hrefLabel: 'Crear marca' } : {})}
           icon="brand"
         />
       </>
@@ -84,13 +86,13 @@ export default function BrandsPage() {
       <PageHeader
         title="Marcas"
         description="Gestiona las marcas de tus productos"
-        {...(isAdmin || isJefeProduccion ? { createHref: '/brands/new', createLabel: 'Crear marca' } : {})}
+        {...(canManage ? { createHref: '/brands/new', createLabel: 'Crear marca' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={brands}
           columns={columns}
-          {...(isAdmin || isJefeProduccion ? { editHref: (brand: Brand) => `/brands/${brand.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
+          {...(canManage ? { editHref: (brand: Brand) => `/brands/${brand.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -100,7 +102,7 @@ export default function BrandsPage() {
           }}
         />
       </div>
-      {(isAdmin || isJefeProduccion) && (
+      {canManage && (
         <ConfirmDeleteModal
           open={deleteModalOpen}
           onOpenChange={setDeleteModalOpen}

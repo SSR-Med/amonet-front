@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { canReviewInventory } from '@/lib/access';
 import { useRawMaterialStore } from '@/stores';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/utils';
@@ -17,7 +18,8 @@ export default function EditInventarioPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
+  const canReview = canReviewInventory(user?.rol);
   const { items: materiasPrimas, getAll: loadMateriasPrimas } = useRawMaterialStore();
 
   const [inventario, setInventario] = useState<InventarioItem | null>(null);
@@ -31,6 +33,10 @@ export default function EditInventarioPage() {
   const [fechaVencimiento, setFechaVencimiento] = useState('');
   const [contenedores, setContenedores] = useState<{ cantidad: number; cantidad_disponible: number; precio: number }[]>([]);
   const [archivo, setArchivo] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (!canReview) router.push('/inventario');
+  }, [canReview, router]);
 
   useEffect(() => {
     if (materiasPrimas.length === 0) loadMateriasPrimas();
@@ -111,7 +117,7 @@ export default function EditInventarioPage() {
     }
   };
 
-  if (loading) return null;
+  if (!canReview || loading) return null;
   if (!inventario) return null;
 
   return (

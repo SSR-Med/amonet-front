@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { useProductVariableStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -12,7 +13,8 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { ProductVariable } from '@/types';
 
 export default function ProductVariablesPage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteVariable } = useProductVariableStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -74,7 +76,7 @@ export default function ProductVariablesPage() {
         <EmptyState
           title="Aún no hay variables"
           description="Crea tu primera variable global para usarla en las fórmulas de tus productos."
-          {...(isAdmin || isJefeProduccion ? { href: '/product-variables/new', hrefLabel: 'Crear variable' } : {})}
+          {...(canManage ? { href: '/product-variables/new', hrefLabel: 'Crear variable' } : {})}
           icon="variable"
         />
       </>
@@ -86,13 +88,13 @@ export default function ProductVariablesPage() {
       <PageHeader
         title="Variables Globales"
         description="Gestiona las variables disponibles para fórmulas"
-        {...(isAdmin || isJefeProduccion ? { createHref: '/product-variables/new', createLabel: 'Crear variable' } : {})}
+        {...(canManage ? { createHref: '/product-variables/new', createLabel: 'Crear variable' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={items}
           columns={columns}
-          {...(isAdmin || isJefeProduccion ? { editHref: (pv: ProductVariable) => `/product-variables/${pv.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
+          {...(canManage ? { editHref: (pv: ProductVariable) => `/product-variables/${pv.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -102,7 +104,7 @@ export default function ProductVariablesPage() {
           }}
         />
       </div>
-      {(isAdmin || isJefeProduccion) && (
+      {canManage && (
         <ConfirmDeleteModal
           open={deleteModalOpen}
           onOpenChange={setDeleteModalOpen}

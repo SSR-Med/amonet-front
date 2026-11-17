@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/utils';
-import { ADMIN, JEFE_PRODUCCION } from '@/lib/constants';
+import { canManageProduction, isAdmin } from '@/lib/access';
 import * as api from '@/lib/api/ordenes-produccion';
 import type { OrdenProduccionDetail, EstadoProduccion } from '@/types';
 
@@ -27,7 +27,7 @@ export default function OrdenProduccionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [orden, setOrden] = useState<OrdenProduccionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [estados, setEstados] = useState<EstadoProduccion[]>([]);
@@ -56,7 +56,7 @@ export default function OrdenProduccionDetailPage() {
   }, [params.id, router, toast]);
 
   const isTerminal = orden?.estado_produccion.nombre === 'FINISHED' || orden?.estado_produccion.nombre === 'CANCELLED';
-  const canAct = isAdmin || (user?.rol === JEFE_PRODUCCION && !isTerminal);
+  const canAct = isAdmin(user?.rol) || (!isTerminal && canManageProduction(user?.rol));
 
   const handleFinish = async () => {
     const estado = estados.find(e => e.nombre === 'FINISHED');

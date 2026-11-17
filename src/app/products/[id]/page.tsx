@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { Button } from '@/components/ui/button';
 import { validateFormula } from '@/lib/formula-validator';
 import { useProductVariableStore } from '@/stores';
@@ -14,7 +15,8 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Product } from '@/types';
 
 export default function ProductDetailPage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -55,7 +57,7 @@ export default function ProductDetailPage() {
             <p className="text-sm text-gris-tecnico">Código: {product.codigo}</p>
           </div>
         </div>
-        {(isAdmin || isJefeProduccion) && (
+        {canManage && (
           <Button asChild>
             <Link href={`/products/${product.id}/edit`}>
               <Pencil className="mr-2 h-4 w-4" />

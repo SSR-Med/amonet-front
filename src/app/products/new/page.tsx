@@ -3,18 +3,20 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { ProductForm } from '@/components/forms';
 
 export default function NewProductPage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAdmin && !isJefeProduccion) router.push('/products');
-  }, [isAdmin, isJefeProduccion, router]);
+    if (!canManage) router.push('/products');
+  }, [canManage, router]);
 
-  if (!isAdmin && !isJefeProduccion) return null;
+  if (!canManage) return null;
 
   return (
     <>

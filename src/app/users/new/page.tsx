@@ -3,18 +3,20 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageUsers } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { UserForm } from '@/components/forms/user-form';
 
 export default function NewUserPage() {
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageUsers(user?.rol);
 
   useEffect(() => {
-    if (!isAdmin) router.push('/users');
-  }, [isAdmin, router]);
+    if (!canManage) router.push('/users');
+  }, [canManage, router]);
 
-  if (!isAdmin) return null;
+  if (!canManage) return null;
 
   return (
     <>

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { canViewLogs } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,8 @@ function formatPeso(peso: number | null): string {
 
 export default function LogsPage() {
   const router = useRouter();
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const canView = canViewLogs(user?.rol);
   const { toast } = useToast();
   const [items, setItems] = useState<LogItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,8 +34,8 @@ export default function LogsPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) router.push('/');
-  }, [isAdmin, authLoading, router]);
+    if (!authLoading && !canView) router.push('/');
+  }, [canView, authLoading, router]);
 
   const today = new Date().toISOString().split('T')[0];
   const [fechaInicio, setFechaInicio] = useState(today);
@@ -92,7 +94,7 @@ export default function LogsPage() {
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
-  if (!isAdmin) return null;
+  if (!canView) return null;
 
   return (
     <>

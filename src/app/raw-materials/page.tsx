@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { Archive, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { useRawMaterialStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -16,7 +17,8 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { RawMaterial } from '@/types';
 
 export default function RawMaterialsPage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteRawMaterial } = useRawMaterialStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -121,7 +123,7 @@ export default function RawMaterialsPage() {
         <EmptyState
           title="Aún no hay materias primas"
           description="Crea tu primera materia prima para comenzar a gestionar tus productos."
-          {...(isAdmin || isJefeProduccion ? { href: '/raw-materials/new', hrefLabel: 'Crear materia prima' } : {})}
+          {...(canManage ? { href: '/raw-materials/new', hrefLabel: 'Crear materia prima' } : {})}
           icon="material"
         />
       </>
@@ -133,13 +135,13 @@ export default function RawMaterialsPage() {
       <PageHeader
         title="Materias Primas"
         description="Gestiona las materias primas de tus productos"
-        {...(isAdmin || isJefeProduccion ? { createHref: '/raw-materials/new', createLabel: 'Crear materia prima' } : {})}
+        {...(canManage ? { createHref: '/raw-materials/new', createLabel: 'Crear materia prima' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={items}
           columns={columns}
-          {...(isAdmin || isJefeProduccion ? { editHref: (rm: RawMaterial) => `/raw-materials/${rm.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
+          {...(canManage ? { editHref: (rm: RawMaterial) => `/raw-materials/${rm.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -149,7 +151,7 @@ export default function RawMaterialsPage() {
           }}
         />
       </div>
-      {(isAdmin || isJefeProduccion) && (
+      {canManage && (
         <ConfirmDeleteModal
           open={deleteModalOpen}
           onOpenChange={setDeleteModalOpen}

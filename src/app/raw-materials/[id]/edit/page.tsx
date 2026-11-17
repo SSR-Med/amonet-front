@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { RawMaterialForm } from '@/components/forms';
 import * as rawMaterialsApi from '@/lib/api/raw-materials';
@@ -11,7 +12,8 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { RawMaterial } from '@/types';
 
 export default function EditRawMaterialPage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -19,8 +21,8 @@ export default function EditRawMaterialPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAdmin && !isJefeProduccion) router.push('/raw-materials');
-  }, [isAdmin, isJefeProduccion, router]);
+    if (!canManage) router.push('/raw-materials');
+  }, [canManage, router]);
 
   useEffect(() => {
     (async () => {
@@ -36,7 +38,7 @@ export default function EditRawMaterialPage() {
     })();
   }, [params.id, router, toast]);
 
-  if ((!isAdmin && !isJefeProduccion) || loading) return null;
+  if (!canManage || loading) return null;
   if (!rawMaterial) return null;
 
   return (

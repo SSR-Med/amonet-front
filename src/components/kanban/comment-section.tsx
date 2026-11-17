@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
+import { isAdmin } from '@/lib/access';
 import * as api from '@/lib/api/kanban-board';
 import type { ComentarioTarea } from '@/types';
 
@@ -76,7 +77,7 @@ export function CommentSection({ tareaId }: Props) {
   };
 
   const canModify = (c: ComentarioTarea) => {
-    return c.usuario_alta.id === user?.id || user?.rol === 'ADMIN';
+    return c.usuario_alta.id === user?.id || isAdmin(user?.rol);
   };
 
   return (

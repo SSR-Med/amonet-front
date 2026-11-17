@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { evaluate } from 'mathjs';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +46,8 @@ interface AvailablePageState {
 export default function NewOrdenProduccionPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
 
   const { getAll: getAllProducts, items: products } = useProductStore();
   const { getAll: getAllMaterials, items: rawMaterials, loadCatalogs } = useRawMaterialStore();
@@ -77,8 +79,8 @@ export default function NewOrdenProduccionPage() {
   }, [getAllProducts, getAllMaterials, getAllVariables, loadCatalogs]);
 
   useEffect(() => {
-    if (!isAdmin && !isJefeProduccion) router.push('/');
-  }, [isAdmin, isJefeProduccion, router]);
+    if (!canManage) router.push('/');
+  }, [canManage, router]);
 
   const filteredProducts = useMemo(() => {
     const q = productSearch.toLowerCase().trim();
@@ -297,7 +299,7 @@ export default function NewOrdenProduccionPage() {
     }
   }, [selectedProductId, selectedProduct, descripcion, observaciones, variableValues, variables, isFreeMode, freeEditMaterials, calculatedMaterials, selectedContainersMap, router, toast]);
 
-  if (!isAdmin && !isJefeProduccion) return null;
+  if (!canManage) return null;
 
   const steps = [
     { num: 1, label: 'Producto' },

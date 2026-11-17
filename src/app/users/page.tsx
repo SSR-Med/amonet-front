@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ADMIN } from '@/lib/constants';
+import { canManageUsers } from '@/lib/access';
 import { useAuth } from '@/contexts/auth-context';
 import { useUserStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
@@ -15,7 +16,8 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { User } from '@/types';
 
 export default function UsersPage() {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { user: currentUser, loading: authLoading } = useAuth();
+  const canManage = canManageUsers(currentUser?.rol);
   const { items: users, totalItems, currentPage, pageSize, loading, getAll, delete: deleteUser } = useUserStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -24,8 +26,8 @@ export default function UsersPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) router.push('/');
-  }, [isAdmin, authLoading, router]);
+    if (!authLoading && !canManage) router.push('/');
+  }, [canManage, authLoading, router]);
 
   const fetchUsers = useCallback(
     (page = 1) => getAll(page, pageSize),
@@ -109,15 +111,15 @@ export default function UsersPage() {
       <PageHeader
         title="Usuarios"
         description="Gestiona los usuarios del sistema"
-        createHref={isAdmin ? '/users/new' : undefined}
+        createHref={canManage ? '/users/new' : undefined}
         createLabel="Crear usuario"
       />
       <div className="px-6">
         <EntityTable
           data={users}
           columns={columns}
-          editHref={isAdmin ? (user) => `/users/${user.id}/edit` : undefined}
-          onDelete={isAdmin ? handleDelete : undefined}
+          editHref={canManage ? (user) => `/users/${user.id}/edit` : undefined}
+          onDelete={canManage ? handleDelete : undefined}
           pagination={{
             currentPage,
             totalItems,

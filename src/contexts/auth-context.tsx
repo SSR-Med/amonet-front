@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import * as authApi from '@/lib/api/auth';
-import { ADMIN, JEFE_PRODUCCION, CALIDAD } from '@/lib/constants';
 
 interface User {
   id: string;
@@ -15,9 +14,6 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  isAdmin: boolean;
-  isJefeProduccion: boolean;
-  isCalidad: boolean;
   loading: boolean;
   login: (documento: string, password: string) => Promise<void>;
   logout: () => void;
@@ -88,9 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
-        isAdmin: user?.rol === ADMIN,
-        isJefeProduccion: user?.rol === JEFE_PRODUCCION,
-        isCalidad: user?.rol === CALIDAD,
         loading,
         login,
         logout,

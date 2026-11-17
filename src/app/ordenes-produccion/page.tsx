@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, Calendar, Package, FlaskConical } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,8 @@ export default function OrdenesProduccionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const { getAll: getAllProducts, items: products } = useProductStore();
   const { getAll: getAllMaterials, items: rawMaterials } = useRawMaterialStore();
 
@@ -91,7 +93,7 @@ export default function OrdenesProduccionPage() {
       <PageHeader
         title="Órdenes de Producción"
         description="Gestiona las órdenes de producción"
-        createHref={(isAdmin || isJefeProduccion) ? '/ordenes-produccion/new' : undefined}
+        createHref={canManage ? '/ordenes-produccion/new' : undefined}
         createLabel="Nueva Orden"
       />
 
@@ -159,7 +161,7 @@ export default function OrdenesProduccionPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-gris-tecnico">No se encontraron órdenes de producción.</p>
-              {(isAdmin || isJefeProduccion) && (
+              {canManage && (
                 <Button asChild className="mt-4">
                   <Link href="/ordenes-produccion/new">Nueva Orden</Link>
                 </Button>

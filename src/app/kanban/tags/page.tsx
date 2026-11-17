@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '@/contexts/auth-context';
 import { useTagKanbanStore } from '@/stores/tag-kanban-store';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -12,7 +11,6 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { TagKanban } from '@/types';
 
 export default function TagsKanbanPage() {
-  const { isAdmin } = useAuth();
   const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteTag } = useTagKanbanStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);

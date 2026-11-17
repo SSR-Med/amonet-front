@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { ProductForm } from '@/components/forms';
 import * as productsApi from '@/lib/api/products';
@@ -11,7 +12,8 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Product } from '@/types';
 
 export default function EditProductPage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -19,8 +21,8 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAdmin && !isJefeProduccion) router.push('/products');
-  }, [isAdmin, isJefeProduccion, router]);
+    if (!canManage) router.push('/products');
+  }, [canManage, router]);
 
   useEffect(() => {
     (async () => {
@@ -36,7 +38,7 @@ export default function EditProductPage() {
     })();
   }, [params.id, router, toast]);
 
-  if ((!isAdmin && !isJefeProduccion) || loading) return null;
+  if (!canManage || loading) return null;
   if (!product) return null;
 
   return (

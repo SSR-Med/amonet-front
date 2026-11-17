@@ -5,29 +5,31 @@ import { usePathname } from 'next/navigation';
 import { Package, Tag, FlaskConical, Variable, LayoutDashboard, Users, UserCircle, LogOut, FileText, Archive, ClipboardList, ArrowLeft, Tags, ArrowUpFromDot, Kanban, ListTodo, IterationCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageUsers } from '@/lib/access';
 
 const productionModules = [
-  { name: 'Productos', href: '/products', icon: Package, adminOnly: false },
-  { name: 'Marcas', href: '/brands', icon: Tag, adminOnly: false },
-  { name: 'Materias Primas', href: '/raw-materials', icon: FlaskConical, adminOnly: false },
-  { name: 'Variables Globales', href: '/product-variables', icon: Variable, adminOnly: false },
-  { name: 'Usuarios', href: '/users', icon: Users, adminOnly: true },
-  { name: 'Inventario', href: '/inventario', icon: Archive, adminOnly: false },
-  { name: 'Órdenes Prod.', href: '/ordenes-produccion', icon: ClipboardList, adminOnly: false },
-  { name: 'Logs', href: '/logs', icon: FileText, adminOnly: true },
+  { name: 'Productos', href: '/products', icon: Package, requiresAdmin: false },
+  { name: 'Marcas', href: '/brands', icon: Tag, requiresAdmin: false },
+  { name: 'Materias Primas', href: '/raw-materials', icon: FlaskConical, requiresAdmin: false },
+  { name: 'Variables Globales', href: '/product-variables', icon: Variable, requiresAdmin: false },
+  { name: 'Usuarios', href: '/users', icon: Users, requiresAdmin: true },
+  { name: 'Inventario', href: '/inventario', icon: Archive, requiresAdmin: false },
+  { name: 'Órdenes Prod.', href: '/ordenes-produccion', icon: ClipboardList, requiresAdmin: false },
+  { name: 'Logs', href: '/logs', icon: FileText, requiresAdmin: true },
 ];
 
 const kanbanModules = [
-  { name: 'Board', href: '/kanban/board', icon: Kanban, adminOnly: false },
-  { name: 'Sprints', href: '/kanban/sprints', icon: IterationCcw, adminOnly: false },
-  { name: 'Todas las tareas', href: '/kanban/tareas', icon: ListTodo, adminOnly: false },
-  { name: 'Tags', href: '/kanban/tags', icon: Tags, adminOnly: false },
-  { name: 'Prioridades', href: '/kanban/prioridades', icon: ArrowUpFromDot, adminOnly: false },
+  { name: 'Board', href: '/kanban/board', icon: Kanban, requiresAdmin: false },
+  { name: 'Sprints', href: '/kanban/sprints', icon: IterationCcw, requiresAdmin: false },
+  { name: 'Todas las tareas', href: '/kanban/tareas', icon: ListTodo, requiresAdmin: false },
+  { name: 'Tags', href: '/kanban/tags', icon: Tags, requiresAdmin: false },
+  { name: 'Prioridades', href: '/kanban/prioridades', icon: ArrowUpFromDot, requiresAdmin: false },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isAdmin, logout } = useAuth();
+  const { user, logout } = useAuth();
+  const canSeeAdminModules = canManageUsers(user?.rol);
   const isKanban = pathname?.startsWith('/kanban');
 
   const isActive = (href: string) => {
@@ -60,7 +62,7 @@ export function Sidebar() {
             {sectionTitle}
           </p>
           {modules
-            .filter((m) => !m.adminOnly || isAdmin)
+            .filter((m) => !m.requiresAdmin || canSeeAdminModules)
             .map((module) => {
               const Icon = module.icon;
               const active = isActive(module.href);

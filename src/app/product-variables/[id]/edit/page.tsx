@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { ProductVariableForm } from '@/components/forms';
 import * as productVariablesApi from '@/lib/api/product-variables';
@@ -11,7 +12,8 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { ProductVariable } from '@/types';
 
 export default function EditProductVariablePage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -19,8 +21,8 @@ export default function EditProductVariablePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAdmin && !isJefeProduccion) router.push('/product-variables');
-  }, [isAdmin, isJefeProduccion, router]);
+    if (!canManage) router.push('/product-variables');
+  }, [canManage, router]);
 
   useEffect(() => {
     (async () => {
@@ -36,7 +38,7 @@ export default function EditProductVariablePage() {
     })();
   }, [params.id, router, toast]);
 
-  if ((!isAdmin && !isJefeProduccion) || loading) return null;
+  if (!canManage || loading) return null;
   if (!variable) return null;
 
   return (

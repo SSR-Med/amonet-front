@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { useProductStore } from '@/stores';
 import { PageHeader } from '@/components/layout';
 import { EntityTable } from '@/components/tables';
@@ -13,7 +14,8 @@ import { getApiErrorMessage } from '@/lib/utils';
 import type { Product } from '@/types';
 
 export default function ProductsPage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const { items, totalItems, currentPage, pageSize, loading, getAll, delete: deleteProduct } = useProductStore();
   const { toast } = useToast();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -94,7 +96,7 @@ export default function ProductsPage() {
         <EmptyState
           title="Aún no hay productos"
           description="Crea tu primer producto para comenzar a gestionar tu inventario."
-          {...(isAdmin || isJefeProduccion ? { href: '/products/new', hrefLabel: 'Crear producto' } : {})}
+          {...(canManage ? { href: '/products/new', hrefLabel: 'Crear producto' } : {})}
           icon="product"
         />
       </>
@@ -106,13 +108,13 @@ export default function ProductsPage() {
       <PageHeader
         title="Productos"
         description="Gestiona tus productos terminados"
-        {...(isAdmin || isJefeProduccion ? { createHref: '/products/new', createLabel: 'Crear producto' } : {})}
+        {...(canManage ? { createHref: '/products/new', createLabel: 'Crear producto' } : {})}
       />
       <div className="px-6">
         <EntityTable
           data={items}
           columns={columns}
-          {...(isAdmin || isJefeProduccion ? { editHref: (product: Product) => `/products/${product.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
+          {...(canManage ? { editHref: (product: Product) => `/products/${product.id}/edit`, onDelete: handleDelete } : { hideActions: true })}
           pagination={{
             currentPage,
             totalItems,
@@ -122,7 +124,7 @@ export default function ProductsPage() {
           }}
         />
       </div>
-      {(isAdmin || isJefeProduccion) && (
+      {canManage && (
         <ConfirmDeleteModal
           open={deleteModalOpen}
           onOpenChange={setDeleteModalOpen}

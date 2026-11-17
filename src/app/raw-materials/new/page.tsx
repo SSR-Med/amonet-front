@@ -3,18 +3,20 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageProduction } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { RawMaterialForm } from '@/components/forms';
 
 export default function NewRawMaterialPage() {
-  const { isAdmin, isJefeProduccion } = useAuth();
+  const { user } = useAuth();
+  const canManage = canManageProduction(user?.rol);
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAdmin && !isJefeProduccion) router.push('/raw-materials');
-  }, [isAdmin, isJefeProduccion, router]);
+    if (!canManage) router.push('/raw-materials');
+  }, [canManage, router]);
 
-  if (!isAdmin && !isJefeProduccion) return null;
+  if (!canManage) return null;
 
   return (
     <>

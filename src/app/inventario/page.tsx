@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
-import { CALIDAD } from '@/lib/constants';
+import { canReviewInventory, isAdmin } from '@/lib/access';
 import { getApiErrorMessage } from '@/lib/utils';
 import * as inventarioApi from '@/lib/api/inventario';
 import { useRawMaterialStore } from '@/stores';
@@ -29,7 +29,7 @@ export default function InventarioPage() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAdmin, user: currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { items: materiasPrimas, getAll: loadMateriasPrimas } = useRawMaterialStore();
 
   const [data, setData] = useState<InventarioItem[]>([]);
@@ -121,12 +121,13 @@ export default function InventarioPage() {
     }
   };
 
-  const canReview = isAdmin || currentUser?.rol === CALIDAD;
+  const canReview = canReviewInventory(currentUser?.rol);
+  const isAdminUser = isAdmin(currentUser?.rol);
   const isPending = (item: InventarioItem) => item.status === null;
 
   const canEdit = (item: InventarioItem) => {
-    if (isAdmin) return true;
-    if (currentUser?.rol === CALIDAD && isPending(item)) return true;
+    if (isAdminUser) return true;
+    if (canReview && isPending(item)) return true;
     return false;
   };
 
@@ -251,7 +252,7 @@ export default function InventarioPage() {
                                 <Pencil className="h-4 w-4 text-violet-lab" />
                               </Button>
                             )}
-                            {(isAdmin || (canReview && isPending(item))) && (
+                            {(isAdminUser || (canReview && isPending(item))) && (
                               <>
                                 <Button
                                   variant="ghost"

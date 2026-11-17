@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { canManageUsers } from '@/lib/access';
 import { PageHeader } from '@/components/layout';
 import { UserForm } from '@/components/forms/user-form';
 import * as usersApi from '@/lib/api/users';
@@ -13,14 +14,15 @@ import type { User } from '@/types';
 export default function EditUserPage() {
   const params = useParams();
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { user: currentUser } = useAuth();
+  const canManage = canManageUsers(currentUser?.rol);
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAdmin) router.push('/users');
-  }, [isAdmin, router]);
+    if (!canManage) router.push('/users');
+  }, [canManage, router]);
 
   useEffect(() => {
     (async () => {
@@ -36,7 +38,7 @@ export default function EditUserPage() {
     })();
   }, [params.id, router, toast]);
 
-  if (!isAdmin) return null;
+  if (!canManage) return null;
   if (loading) return null;
   if (!user) return null;
 
